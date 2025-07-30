@@ -1,22 +1,8 @@
-# Pixel Detector - Healthcare Privacy Compliance Tool
+# Pixel Detector
 
-## 🚨 Why This Matters
+Detect tracking pixels on healthcare websites that may violate HIPAA. **10-second scans** prevent million-dollar fines.
 
-**33% of healthcare websites leak patient data to Meta, Google, and other advertising platforms.**
-
-- **Average HIPAA fine**: $2.1 million per violation
-- **Time to manually audit**: 40+ hours per website  
-- **Time with Pixel Detector**: 10 seconds
-
-This tool helps healthcare organizations, insurers, and compliance teams instantly identify tracking pixels that violate HIPAA by transmitting Protected Health Information (PHI) without proper Business Associate Agreements (BAAs).
-
-## 🎯 Who Needs This
-
-- **Healthcare Compliance Officers** - Prevent HIPAA violations before they happen
-- **Cyber Insurance Underwriters** - Instantly assess privacy risks for accurate pricing
-- **Hospital IT Security Teams** - Audit third-party scripts and marketing tools
-- **Healthcare Legal Departments** - Document compliance and remediation efforts
-- **Privacy Advocates & Researchers** - Study industry-wide tracking practices
+📊 [Why This Matters](WHY_THIS_MATTERS.md) | 📈 [Real Results](example_results/) | 🏥 [Healthcare Analysis](results/)
 
 ## ⚡ Quick Start
 
