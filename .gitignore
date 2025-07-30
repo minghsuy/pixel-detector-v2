@@ -151,11 +151,10 @@ Thumbs.db
 
 # Project specific
 screenshots/
-*.json
-!package.json
-!tsconfig.json
 scan_results.json
-results/
+# Keep example results for documentation
+!example_results/**/*.json
+!results/**/*.json
 
 # Playwright
 node_modules/
