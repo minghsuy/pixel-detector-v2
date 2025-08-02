@@ -22,8 +22,8 @@ docker-compose up -d  # Full API + monitoring stack
 
 ```bash
 # Install (one-time setup)
-git clone https://github.com/minghsuy/pixel-detector.git
-cd pixel-detector
+git clone https://github.com/minghsuy/pixel-detector-v2.git
+cd pixel-detector-v2
 poetry install
 poetry run playwright install chromium
 
@@ -142,8 +142,8 @@ pixel-detector scan hospital.com --output-format json > risk_assessment.json
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/minghsuy/pixel-detector.git
-cd pixel-detector
+git clone https://github.com/minghsuy/pixel-detector-v2.git
+cd pixel-detector-v2
 
 # 2. Install dependencies
 poetry install
@@ -210,10 +210,10 @@ pixel-detector batch slow-sites.txt --timeout 60000 --max-retries 5
 ### Advanced Usage
 
 ```python
-# Python API (coming soon)
-from pixel_detector import PixelScanner
+# Python API
+from pixel_detector import Scanner
 
-scanner = PixelScanner()
+scanner = Scanner()
 result = await scanner.scan_domain("hospital.com")
 
 if result.pixels_detected:

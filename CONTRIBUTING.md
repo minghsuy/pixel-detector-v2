@@ -40,7 +40,7 @@ poetry run pytest
 ## 📝 How to Contribute
 
 ### 1. Find an Issue
-- Check our [issue tracker](https://github.com/minghsuy/pixel-detector/issues)
+- Check our [issue tracker](https://github.com/minghsuy/pixel-detector-v2/issues)
 - Look for issues labeled `good first issue` or `help wanted`
 - Comment on the issue to let others know you're working on it
 
@@ -124,7 +124,7 @@ Then create a Pull Request on GitHub with:
 - Compliance report generation
 
 ### Bug Fixes
-- Check [open issues](https://github.com/minghsuy/pixel-detector/issues)
+- Check [open issues](https://github.com/minghsuy/pixel-detector-v2/issues)
 - Improve error handling
 - Fix edge cases
 
@@ -216,9 +216,9 @@ Maintainers will:
 
 ## 💬 Getting Help
 
-- **Questions**: Open a [Discussion](https://github.com/minghsuy/pixel-detector/discussions)
-- **Bugs**: Open an [Issue](https://github.com/minghsuy/pixel-detector/issues)
-- **Security**: Email security@pixeldetector.io *(placeholder)*
+- **Questions**: Open a [Discussion](https://github.com/minghsuy/pixel-detector-v2/discussions)
+- **Bugs**: Open an [Issue](https://github.com/minghsuy/pixel-detector-v2/issues)
+- **Security**: Create a private security advisory on GitHub
 
 ## 🙏 Recognition
 

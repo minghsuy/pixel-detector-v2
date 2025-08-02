@@ -3,12 +3,13 @@
 ## Minute 1: See It Work
 
 ```bash
-# No installation needed - try our hosted demo
-curl -X POST https://demo.pixel-detector.dev/scan \
-  -H "Content-Type: application/json" \
-  -d '{"domain": "mount-sinai.org"}'
+# Quick local test (after installation)
+pixel-detector scan mountsinai.org
 
-# Result: {"meta_pixel": true, "risk_score": 0.95, "fine_exposure": "$2.1M"}
+# Result shows:
+# ✓ Google Analytics detected
+# Risk Level: CRITICAL
+# Potential Fine: $1.5M
 ```
 
 ## Minute 2-3: Local Setup
