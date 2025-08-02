@@ -129,6 +129,12 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Temporary/example files
+example.py
+create_new_repo.sh
+test_*.py
+!tests/test_*.py
+
 # Pyre type checker
 .pyre/
 
@@ -152,9 +158,18 @@ Thumbs.db
 # Project specific
 screenshots/
 scan_results.json
+*.txt
+!requirements*.txt
+!santa_clara_healthcare.txt  # Keep as example input
 # Keep example results for documentation
 !example_results/**/*.json
 !results/**/*.json
+!results/**/*.txt
+
+# Temporary scan outputs
+temp_*.json
+test_*.json
+!tests/**/*.json
 
 # Playwright
 node_modules/
