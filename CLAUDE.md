@@ -961,6 +961,137 @@ class TestPerformance:
 4. **Open Core Strategy**: Give away detection, monetize risk models and services
 5. **Test Like Production**: Include real-world sites, performance benchmarks, insurance workflows
 
+## Lessons Learned from CI/CD Failures (August 2025)
+
+### Critical Mistakes Made
+
+#### 1. **Added Complex CI Features Without Testing**
+**What I did wrong**:
+- Added Codecov without setting up CODECOV_TOKEN
+- Added pip-audit for a Poetry project (wrong tool)
+- Added performance tests that require network access
+- Used "continue-on-error" to hide failures (terrible practice!)
+
+**Correct approach**:
+- Test CI changes locally first: `act` or similar tools
+- Add one feature at a time
+- Never hide failures - fix them
+- Check what package manager the project uses
+
+#### 2. **Import Errors in Test Files**
+**What went wrong**:
+```python
+# WRONG - These don't exist
+from pixel_detector import Scanner  # It's PixelScanner
+from pixel_detector.models.pixel_detection import Evidence  # It's PixelEvidence
+from risk_scoring import PixelRiskScorer  # Can't import from examples/
+```
+
+**Why it happened**: 
+- Didn't check actual module exports
+- Assumed common naming patterns
+- Examples directory isn't part of installed package
+
+**Correct approach**:
+```python
+# Check what's actually exported
+cat src/pixel_detector/__init__.py
+
+# For test-only code, copy it into test file
+# Don't import from examples/ directory
+```
+
+#### 3. **Network-Dependent Tests in CI**
+**Problem**: Tests that scan real websites fail in CI
+**Solution**: 
+- Use `@pytest.mark.skip` for network tests
+- Mock external calls
+- Create offline test fixtures
+
+#### 4. **Poetry vs pip Confusion**
+**Wrong**:
+```yaml
+poetry export -f requirements.txt  # Don't do this!
+pip install pip-audit
+pip-audit -r requirements.txt
+```
+
+**Right**:
+```yaml
+# Use Poetry's built-in commands
+poetry check
+poetry show --outdated
+# Or skip security scanning if not set up properly
+```
+
+### CI Best Practices I Violated
+
+1. **Start Simple**: Begin with basic tests, add features gradually
+2. **Test Locally First**: Run the workflow locally before pushing
+3. **Check Dependencies**: Ensure all tools/tokens are available
+4. **Import Verification**: Always verify imports work in isolated environment
+5. **No Network in CI**: Tests shouldn't depend on external services
+
+### The Right Way to Enhance CI
+
+```yaml
+# Start with working baseline
+- run: poetry run pytest
+- run: poetry run ruff check
+- run: poetry run mypy
+
+# Then add ONE feature at a time:
+# 1. Test it works locally
+# 2. Check all dependencies
+# 3. Add to CI
+# 4. Verify it passes
+# 5. Only then add next feature
+```
+
+### Test File Best Practices
+
+1. **Check actual imports**:
+```bash
+# See what's exported
+grep "__all__" src/pixel_detector/__init__.py
+
+# Check exact class names  
+grep "class" src/pixel_detector/models/
+```
+
+2. **Self-contained tests**:
+- Copy needed classes into test file
+- Don't import from examples/
+- Mock external dependencies
+
+3. **Skip problematic tests**:
+```python
+@pytest.mark.skip(reason="Requires network")
+@pytest.mark.skipif(not os.getenv("API_KEY"), reason="No API key")
+```
+
+### What Actually Works
+
+The original simple CI that just runs:
+- pytest with coverage
+- ruff linting
+- mypy type checking
+
+These work because they:
+- Don't need external services
+- Use only installed dependencies  
+- Run the same locally and in CI
+
+### Key Lesson
+
+**Don't enhance what's working until you understand why it works!**
+
+I broke a working CI by adding "improvements" without understanding the constraints. Always:
+1. Understand current setup first
+2. Test changes locally
+3. Add incrementally
+4. Never hide failures
+
 ## 🔧 Development Patterns & Best Practices
 
 ### Creating New Utilities/Features
