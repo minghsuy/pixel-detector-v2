@@ -180,3 +180,4 @@ node_modules/
 # AWS
 .aws-sam/
 samconfig.toml
+AWS_LAMBDA_DEPLOYMENT_GUIDE.md
