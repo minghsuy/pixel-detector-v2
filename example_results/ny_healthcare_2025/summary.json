@@ -1,0 +1,80 @@
+[
+  {
+    "domain": "nyp.org",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "mountsinai.org",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "nyulangone.org",
+    "pixels_found": 0,
+    "pixel_types": [],
+    "success": true
+  },
+  {
+    "domain": "montefiore.org",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "rochester.edu",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "stonybrookmedicine.edu",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "northwell.edu",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "albanymed.org",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "rochesterregional.org",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  },
+  {
+    "domain": "nychhc.org",
+    "pixels_found": 1,
+    "pixel_types": [
+      "google_analytics"
+    ],
+    "success": true
+  }
+]

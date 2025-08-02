@@ -1,0 +1,47 @@
+{
+  "domain": "example-hospital.org",
+  "url_scanned": "https://example-hospital.org",
+  "timestamp": "2025-07-20T19:58:15.123456",
+  "pixels_detected": [
+    {
+      "type": "google_analytics",
+      "evidence": {
+        "network_requests": [
+          "https://www.google-analytics.com/analytics.js",
+          "https://www.google-analytics.com/collect?v=1&_v=j98&a=123456789"
+        ],
+        "script_tags": [
+          "<script async src=\"https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID\"></script>"
+        ],
+        "cookies_set": [
+          "_ga",
+          "_gid",
+          "_gat_gtag_GA_MEASUREMENT_ID"
+        ],
+        "global_variables": [
+          "gtag",
+          "dataLayer"
+        ],
+        "dom_elements": [],
+        "meta_tags": []
+      },
+      "risk_level": "high",
+      "hipaa_concern": true,
+      "description": "Google Analytics tracking without BAA violates HIPAA",
+      "pixel_id": "GA_MEASUREMENT_ID"
+    }
+  ],
+  "scan_metadata": {
+    "page_load_time": 1.234,
+    "total_requests": 87,
+    "tracking_requests": 5,
+    "blocked_requests": 0,
+    "scan_duration": 3.456,
+    "browser_used": "chromium",
+    "stealth_mode": true,
+    "errors": []
+  },
+  "screenshot_path": null,
+  "success": true,
+  "error_message": null
+}

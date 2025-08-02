@@ -2,7 +2,21 @@
 
 Detect tracking pixels on healthcare websites that may violate HIPAA. **10-second scans** prevent million-dollar fines.
 
-📊 [Why This Matters](WHY_THIS_MATTERS.md) | 📈 [Real Results](example_results/) | 🏥 [Healthcare Analysis](results/)
+📊 [Why This Matters](WHY_THIS_MATTERS.md) | 📈 [Real Results](example_results/) | 🏥 [Healthcare Analysis](results/) | 🏦 [For Insurers](CYBER_INSURANCE_ADOPTION.md)
+
+## 🏦 For Cyber Insurers
+
+**Purpose-built for insurance workflows.** See our comprehensive [Adoption Guide](CYBER_INSURANCE_ADOPTION.md) and [5-Minute Quick Start](QUICK_START_INSURERS.md).
+
+### One-Command Deployment
+```bash
+docker-compose up -d  # Full API + monitoring stack
+```
+
+### Integration Examples
+- [Risk Scoring System](examples/insurance/risk_scoring.py) - Convert scans to insurance metrics
+- [Enterprise API](examples/insurance/enterprise_api.py) - REST API with authentication
+- [Portfolio Monitoring](examples/insurance/) - Automated alerts and reporting
 
 ## ⚡ Quick Start
 
