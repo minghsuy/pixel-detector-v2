@@ -307,20 +307,11 @@ We welcome contributions! Key areas:
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
-## 📞 Support & Contact
+## 📞 Support
 
-### For Healthcare Organizations
-- **Documentation**: Coming soon
-- **Email**: healthcare@pixeldetector.io *(placeholder)*
-
-### For Cyber Insurance Companies  
-- **Business Case**: [ROI Analysis](./docs/analysis/CYBER_INSURANCE_BUSINESS_CASE.md)
-- **API Access**: insurance@pixeldetector.io *(placeholder)*
-- **Enterprise Support**: Available
-
-### Open Source Community
-- **Issues**: [GitHub Issues](https://github.com/minghsuy/pixel-detector/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/minghsuy/pixel-detector/discussions)
+- **Issues & Bug Reports**: [GitHub Issues](https://github.com/minghsuy/pixel-detector-v2/issues)
+- **Feature Requests**: [GitHub Issues](https://github.com/minghsuy/pixel-detector-v2/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/minghsuy/pixel-detector-v2/discussions)
 
 ## ⚖️ Legal
 
