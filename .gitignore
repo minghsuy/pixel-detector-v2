@@ -158,13 +158,12 @@ Thumbs.db
 # Project specific
 screenshots/
 scan_results.json
+results/
 *.txt
 !requirements*.txt
 !santa_clara_healthcare.txt  # Keep as example input
 # Keep example results for documentation
 !example_results/**/*.json
-!results/**/*.json
-!results/**/*.txt
 
 # Temporary scan outputs
 temp_*.json
