@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-08-02
+
+### Added
+- Comprehensive cyber insurance adoption documentation
+  - CYBER_INSURANCE_ADOPTION.md with ROI models and implementation roadmap
+  - QUICK_START_INSURERS.md for 5-minute proof of value
+  - WHY_THIS_MATTERS.md with $66M in fines context
+- Insurance-specific examples
+  - Risk scoring system (examples/insurance/risk_scoring.py)
+  - Enterprise API wrapper (examples/insurance/enterprise_api.py)
+- Docker Compose configuration for one-command deployment
+- GitHub Actions CI/CD pipeline with coverage reporting
+- Insurance workflow concept tests
+
+### Changed
+- Streamlined README to focus on quick start and core value
+- Improved documentation structure for dual audiences (healthcare + insurers)
+- Enhanced .gitignore for cleaner repository
+
+### Fixed
+- Repository URLs throughout documentation
+- CI/CD pipeline issues with proper test configuration
+- Import errors in test files
+
+### Documentation
+- Added comprehensive lessons learned in CLAUDE.md
+- Created focused documentation for cyber insurance market
+- Removed placeholder content and unrealistic promises
+
 ## [0.2.0] - 2025-07-30
 
 ### Added
