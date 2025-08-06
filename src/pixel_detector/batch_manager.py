@@ -4,16 +4,15 @@ Features: checkpointing, resume capability, progress monitoring, parallel proces
 """
 import asyncio
 import json
+import signal
+import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-import signal
-import sys
 
-from .scanner import PixelScanner
-from .models import ScanResult
 from .logging_config import get_logger
+from .scanner import PixelScanner
 
 logger = get_logger(__name__)
 
@@ -51,12 +50,12 @@ class LocalBatchManager:
         """Load previous progress if exists"""
         progress_file = self.results_dir / f"{batch_name}_progress.json"
         if progress_file.exists():
-            with open(progress_file, 'r') as f:
+            with open(progress_file) as f:
                 data = json.load(f)
                 self.completed = set(data.get("completed", []))
                 self.failed = data.get("failed", {})
                 logger.info(f"Resumed: {len(self.completed)} completed, {len(self.failed)} failed")
-                return data.get("remaining", [])
+                return list(data.get("remaining", []))
         return []
     
     def _save_progress(self, batch_name: str, all_domains: list[str]) -> None:
@@ -73,8 +72,8 @@ class LocalBatchManager:
         }
         
         progress_file = self.results_dir / f"{batch_name}_progress.json"
-        temp_file = progress_file.with_suffix('.tmp')
-        with open(temp_file, 'w') as f:
+        temp_file = progress_file.with_suffix(".tmp")
+        with open(temp_file, "w") as f:
             json.dump(progress_data, f, indent=2)
         temp_file.replace(progress_file)
         
@@ -97,7 +96,7 @@ class LocalBatchManager:
         print(f"\r📊 Progress: {processed}/{total_domains} ({processed/total_domains*100:.1f}%) | "
               f"✅ Success: {success_rate:.1f}% | "
               f"⚡ Rate: {rate*60:.1f}/min | "
-              f"⏱️ ETA: {timedelta(seconds=int(eta_seconds))}", end='', flush=True)
+              f"⏱️ ETA: {timedelta(seconds=int(eta_seconds))}", end="", flush=True)
     
     async def scan_batch(
         self,
@@ -110,7 +109,7 @@ class LocalBatchManager:
         self.start_time = time.time()
         
         # Load domains
-        with open(domains_file, 'r') as f:
+        with open(domains_file) as f:
             all_domains = [line.strip() for line in f if line.strip()]
         
         logger.info(f"📋 Loaded {len(all_domains)} domains from {domains_file}")
@@ -150,7 +149,7 @@ class LocalBatchManager:
         print(f"\n🚀 Starting scan of {len(domains_to_scan)} domains")
         print(f"   Max concurrent: {self.max_concurrent}")
         print(f"   Checkpoint every: {self.checkpoint_every} domains")
-        print(f"   Press Ctrl+C to pause (progress will be saved)\n")
+        print("   Press Ctrl+C to pause (progress will be saved)\n")
         
         try:
             for i in range(0, len(domains_to_scan), chunk_size):
@@ -169,7 +168,7 @@ class LocalBatchManager:
                         
                         # Save successful results
                         output_file = batch_dir / f"{result.domain.replace('.', '_')}.json"
-                        with open(output_file, 'w') as f:
+                        with open(output_file, "w") as f:
                             json.dump(result.model_dump(), f, indent=2, default=str)
                     else:
                         self.failed[result.domain] = result.error_message or "Unknown error"
@@ -205,13 +204,15 @@ class LocalBatchManager:
             "success_rate": (len(self.completed) / total_processed * 100) if total_processed > 0 else 0,
             "elapsed_hours": elapsed / 3600,
             "domains_per_minute": (total_processed / elapsed * 60) if elapsed > 0 else 0,
-            "estimated_total_hours": (elapsed / total_processed * len(all_domains) / 3600) if total_processed > 0 else 0,
+            "estimated_total_hours": (
+                (elapsed / total_processed * len(all_domains) / 3600) if total_processed > 0 else 0
+            ),
             "timestamp": datetime.now().isoformat(),
         }
         
         # Save summary
         summary_file = self.results_dir / f"{batch_name}_summary.json"
-        with open(summary_file, 'w') as f:
+        with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
         
         # Print final summary
@@ -235,9 +236,8 @@ class LocalBatchManager:
 
 
 # CLI interface for easy execution
-async def main():
+async def main() -> None:
     """Simple CLI for batch scanning"""
-    import sys
     
     if len(sys.argv) < 3:
         print("Usage: python -m pixel_detector.batch_manager <domains_file> <batch_name>")

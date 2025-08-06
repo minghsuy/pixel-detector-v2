@@ -4,16 +4,14 @@ Handles 15K+ domains with checkpointing, resumability, and fault tolerance.
 """
 import asyncio
 import json
+import signal
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
-import signal
-import sys
+from typing import Any
 
-from .scanner import PixelScanner
-from .models import ScanResult
 from .logging_config import get_logger
+from .scanner import PixelScanner
 
 logger = get_logger(__name__)
 
@@ -69,7 +67,10 @@ class BatchProcessor:
             "stats": {
                 "completed_count": len(self.completed_domains),
                 "failed_count": len(self.failed_domains),
-                "success_rate": len(self.completed_domains) / max(len(self.completed_domains) + len(self.failed_domains), 1),
+                "success_rate": (
+                    len(self.completed_domains) / 
+                    max(len(self.completed_domains) + len(self.failed_domains), 1)
+                ),
             }
         }
         
@@ -77,8 +78,8 @@ class BatchProcessor:
             self.checkpoint_file = self._create_checkpoint_filename(batch_id)
         
         # Write atomically to avoid corruption
-        temp_file = self.checkpoint_file.with_suffix('.tmp')
-        with open(temp_file, 'w') as f:
+        temp_file = self.checkpoint_file.with_suffix(".tmp")
+        with open(temp_file, "w") as f:
             json.dump(checkpoint_data, f, indent=2)
         temp_file.replace(self.checkpoint_file)
         
@@ -90,7 +91,7 @@ class BatchProcessor:
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_file}")
         
-        with open(checkpoint_path, 'r') as f:
+        with open(checkpoint_path) as f:
             data = json.load(f)
         
         self.completed_domains = set(data["completed"])
@@ -160,7 +161,7 @@ class BatchProcessor:
                     
                     # Save individual result
                     result_file = output_path / f"{result.domain.replace('.', '_')}.json"
-                    with open(result_file, 'w') as f:
+                    with open(result_file, "w") as f:
                         json.dump(result.model_dump(), f, indent=2, default=str)
                     
                     all_results.append(result)
@@ -205,7 +206,10 @@ class BatchProcessor:
             "total_domains": len(domains),
             "completed": len(self.completed_domains),
             "failed": len(self.failed_domains),
-            "success_rate": len(self.completed_domains) / max(len(self.completed_domains) + len(self.failed_domains), 1),
+            "success_rate": (
+                len(self.completed_domains) / 
+                max(len(self.completed_domains) + len(self.failed_domains), 1)
+            ),
             "elapsed_time": time.time() - self.start_time,
             "domains_per_second": len(self.completed_domains) / (time.time() - self.start_time),
             "timestamp": datetime.now().isoformat(),
@@ -213,7 +217,7 @@ class BatchProcessor:
         }
         
         summary_file = output_path / f"batch_summary_{batch_id}.json"
-        with open(summary_file, 'w') as f:
+        with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
         
         logger.info(f"Batch processing complete: {summary}")

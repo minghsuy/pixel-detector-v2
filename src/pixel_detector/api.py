@@ -1,10 +1,8 @@
 """Simple API server for pixel detector - for docker-compose testing only."""
 
-import asyncio
-from typing import Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException  # type: ignore
+from fastapi.responses import JSONResponse  # type: ignore
 from pydantic import BaseModel
 
 from .scanner import PixelScanner
@@ -25,14 +23,14 @@ class HealthResponse(BaseModel):
     version: str = "0.3.0"
 
 
-@app.get("/health", response_model=HealthResponse)
-async def health_check():
+@app.get("/health", response_model=HealthResponse)  # type: ignore[misc]
+async def health_check() -> HealthResponse:
     """Health check endpoint."""
     return HealthResponse()
 
 
-@app.post("/scan")
-async def scan_domain(request: ScanRequest):
+@app.post("/scan")  # type: ignore[misc]
+async def scan_domain(request: ScanRequest) -> JSONResponse:
     """Scan a single domain for pixel tracking."""
     try:
         scanner = PixelScanner(
@@ -46,9 +44,9 @@ async def scan_domain(request: ScanRequest):
         return JSONResponse(content=result.dict())
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn  # type: ignore
+    uvicorn.run(app, host="127.0.0.1", port=8000)  # Use localhost for security
