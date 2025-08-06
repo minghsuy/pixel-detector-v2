@@ -181,3 +181,10 @@ node_modules/
 .aws-sam/
 samconfig.toml
 AWS_LAMBDA_DEPLOYMENT_GUIDE.md
+# Docker test directories
+docker-input/
+docker-results/
+docker-screenshots/
+docker-logs/
+docker-results-*/
+docker-screenshots-*/

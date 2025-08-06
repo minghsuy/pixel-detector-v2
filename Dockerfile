@@ -19,7 +19,7 @@ COPY pyproject.toml poetry.lock* ./
 # Install poetry and dependencies
 RUN pip install poetry==2.1.3 && \
     poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi --extras lambda
+    poetry install --no-interaction --no-ansi --no-root --extras lambda
 
 # Copy source code
 COPY src/ ./src/

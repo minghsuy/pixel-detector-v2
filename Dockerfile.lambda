@@ -1,0 +1,50 @@
+# Minimal Lambda Dockerfile for learning
+# Not optimized, not production-ready, just WORKS
+
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install system dependencies for Chromium
+# Yes, this list is long, but it's what Chromium needs
+RUN yum install -y \
+    wget \
+    gnupg \
+    unzip \
+    libX11 \
+    libXcomposite \
+    libXcursor \
+    libXdamage \
+    libXext \
+    libXi \
+    libXtst \
+    cups-libs \
+    libXScrnSaver \
+    libXrandr \
+    alsa-lib \
+    pango \
+    atk \
+    at-spi2-atk \
+    gtk3 \
+    && yum clean all
+
+# Copy and install Python dependencies
+COPY pyproject.toml poetry.lock ./
+
+# Install poetry and dependencies (simplified)
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --no-root --extras lambda
+
+# Install Playwright and Chromium
+RUN playwright install chromium && \
+    playwright install-deps chromium
+
+# Copy the application code
+COPY src/ ./src/
+COPY lambda_handler.py ./
+
+# Set environment variables
+ENV PYTHONPATH=/var/task/src:$PYTHONPATH
+ENV HOME=/tmp
+
+# Lambda handler
+CMD ["lambda_handler.lambda_handler"]

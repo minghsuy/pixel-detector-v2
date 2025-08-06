@@ -131,6 +131,21 @@ pixel-detector scan hospital.com --output-format json > risk_assessment.json
 - **Subdomain and path support** - Works with complex URLs like `secure.hospital.com/patient-portal`
 - **Alternative suggestions** - Provides helpful alternatives when domains fail
 
+## 🐳 Docker & AWS Fargate Support (New in v0.3!)
+
+Run Pixel Detector at scale with Docker containers:
+
+- **Production-ready**: Multiple Dockerfile options for different use cases
+- **Fargate deployment**: No time limits, perfect for large portfolio analysis
+- **Local development**: Full VSCode Docker integration guide
+- **Batch processing**: Handle thousands of domains efficiently
+
+**Get Started**: 
+- Local: [Docker VSCode Guide](LOCAL_DOCKER_VSCODE_GUIDE.md)
+- AWS: [Fargate Deployment Guide](FARGATE_DEPLOYMENT.md)
+
+**Note**: Lambda is not recommended due to Playwright compatibility issues. Fargate provides better performance and reliability for batch scanning.
+
 ## 📦 Installation
 
 ### Prerequisites
@@ -285,9 +300,9 @@ export PIXEL_DETECTOR_USER_AGENT="Custom Bot 1.0"
 - Testing: 91% code coverage achieved
 
 ### 🚧 In Progress  
-- Cloud deployment (AWS Lambda)
-- REST API development
-- Web dashboard
+- Cloud deployment - ✅ Docker & Fargate support in v0.3! See [Fargate Guide](FARGATE_DEPLOYMENT.md)
+- REST API development - ✅ FastAPI wrapper available with Docker
+- Web dashboard - Coming in v0.4
 
 ### 📅 Planned
 - Real-time monitoring service

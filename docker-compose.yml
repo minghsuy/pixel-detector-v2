@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   pixel-detector:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     container_name: pixel-detector
     ports:
       - "8000:8000"

@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-08-06
+
+### Added
+- **Comprehensive Docker Support** for production deployments
+  - `Dockerfile.safe` - Production-ready container with non-root user
+  - `Dockerfile.secure` - Hardened container with AppArmor/Firejail
+  - `Dockerfile.api` - REST API wrapper for service deployments
+  - Docker Compose configuration for full stack deployment
+- **AWS Fargate Deployment Guide** - Recommended for large-scale scanning
+  - No time limits (unlike Lambda's 15-minute constraint)
+  - Better resource allocation for Playwright
+  - Handles portfolio analysis at scale
+- **Batch Processing Enhancements**
+  - `batch_manager.py` - Checkpoint and resume capability
+  - `batch_processor.py` - Concurrent domain processing
+  - Health checks before scanning to avoid wasted attempts
+- **Local Development Improvements**
+  - `__main__.py` - Made module directly executable
+  - `api.py` - FastAPI wrapper for REST endpoints
+  - VSCode Docker integration guide
+  - M3 Pro optimized settings
+
+### Changed
+- **Pivoted from Lambda to Fargate** due to GLIBC incompatibility
+  - Lambda + Playwright faces fundamental compatibility issues
+  - Fargate provides better long-running batch job support
+  - More cost-effective for portfolio analysis
+- **Improved Docker configurations**
+  - Fixed Poetry `--no-root` issues across all Dockerfiles
+  - Added proper PYTHONPATH configuration
+  - Created working docker-compose setup
+
+### Fixed
+- Docker build failures due to missing `--no-root` flag
+- Module execution issues (missing `__main__.py`)
+- docker-compose expecting API server that didn't exist
+- Lambda GLIBC version incompatibility with Playwright
+
+### Documentation
+- Added `DOCKER_SAFE_SCANNING.md` for production batch scanning
+- Added `FARGATE_DEPLOYMENT.md` for AWS deployment
+- Added `LOCAL_DOCKER_VSCODE_GUIDE.md` for local development
+- Added `DOCKER_FIXES_APPLIED.md` documenting all corrections
+- Updated examples for portfolio analysis use cases
+
 ## [0.2.1] - 2025-08-02
 
 ### Added

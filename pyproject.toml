@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pixel-detector"
-version = "0.2.1"
+version = "0.3.0"
 description = "Healthcare website pixel tracking detection system"
 authors = ["Ming Yang"]
 readme = "README.md"
