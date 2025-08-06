@@ -1,6 +1,6 @@
-# Pixel Detector
+# Pixel Detector v2
 
-Detect tracking pixels on healthcare websites that may violate HIPAA. **10-second scans** prevent million-dollar fines.
+Detect tracking pixels on healthcare websites that may violate HIPAA. **Fast, reliable scans** with smart URL handling and enterprise features.
 
 📊 [Why This Matters](WHY_THIS_MATTERS.md) | 📈 [Real Results](example_results/) | 🏥 [Healthcare Analysis](results/) | 🏦 [For Insurers](CYBER_INSURANCE_ADOPTION.md)
 
@@ -27,14 +27,14 @@ cd pixel-detector-v2
 poetry install
 poetry run playwright install chromium
 
-# Scan a single healthcare site
+# Portfolio scan (CSV with custom_id for data integration)
+poetry run python production_scanner.py portfolio.csv results/ --concurrent 10
+
+# On-demand scan (simple domain list) 
+poetry run python production_scanner.py domains.txt quick_scan/
+
+# Single site scan (using CLI)
 pixel-detector scan healthcare-site.com
-
-# Batch scan multiple sites  
-pixel-detector batch healthcare_sites.txt -o results/
-
-# For cyber insurance risk assessment
-pixel-detector scan hospital.com --output-format json > risk_assessment.json
 ```
 
 ## 📊 What It Detects
@@ -184,6 +184,39 @@ poetry run playwright install --with-deps chromium
 # Run with proper permissions
 sudo poetry run playwright install chromium
 ```
+
+## 🚀 Production Scanner Features
+
+### Smart URL Handling
+- **Automatic variations**: Tries https/http and www/non-www combinations
+- **Handles redirects**: Follows 301/302 automatically (e.g., badensports.com → www.badensports.com)
+- **Fast timeouts**: 30s default, 60s max (no more 15-minute hangs!)
+- **International domains**: Supports IDN with punycode conversion
+
+### Two Workflow Modes
+
+#### Portfolio Mode (CSV)
+```bash
+# Input: CSV with custom_id and url columns
+# Use case: Large portfolios with data integration needs
+poetry run python production_scanner.py portfolio.csv results/ --concurrent 10
+
+# Output includes: custom_id preserved for join-back to your data
+```
+
+#### On-Demand Mode (TXT)
+```bash
+# Input: Simple text file with domains
+# Use case: Quick scans of 10-50 domains
+poetry run python production_scanner.py domains.txt results/ --concurrent 5
+
+# Output: Streamlined results without custom_id complexity
+```
+
+### Input Validation
+- Automatically rejects: emails, phone numbers, "none", invalid domains
+- Deduplicates: Scans each unique domain only once
+- Cleans: Removes protocols, paths, normalizes to SLD+TLD
 
 ## 🚀 Usage Examples
 

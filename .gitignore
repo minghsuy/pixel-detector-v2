@@ -170,6 +170,47 @@ temp_*.json
 test_*.json
 !tests/**/*.json
 
+# Test files and scan results
+test_*.csv
+*_test_results/
+*_results/
+test_results*/
+strict_test*/
+smart_scan*/
+checkpoint.json
+progress.json
+summary.json
+*_summary.json
+id_domain_mapping.json
+
+# Input files for testing  
+healthcare_*.txt
+healthcare_*.csv
+domains.txt
+portfolio.csv
+sample_*.csv
+sample_*.txt
+test_problem_domains.txt
+test_url_cases.txt
+test_2_domains.txt
+test_ondemand.txt
+test_portfolio.csv
+
+# Temporary/redundant scanner files (use production_scanner.py)
+ultra_reliable_scanner.py
+strict_scanner.py
+smart_url_scanner.py
+unified_pipeline.py
+pipeline_processor.py
+simple_batch.py
+test_url_*.py
+monitor_progress.py
+analyze_scan_results.py
+run_*.sh
+docker_run_*.sh
+Dockerfile.test
+Dockerfile.ultra
+
 # Playwright
 node_modules/
 /test-results/
@@ -188,3 +229,9 @@ docker-screenshots/
 docker-logs/
 docker-results-*/
 docker-screenshots-*/
+
+# Input/Output directories for Docker
+input/
+output/
+!input/.gitkeep
+!output/.gitkeep

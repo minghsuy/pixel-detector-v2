@@ -1,0 +1,44 @@
+version: '3.8'
+
+# Simple docker-compose for batch scanning (no API, no database)
+# For Rancher/Kubernetes deployment
+
+services:
+  scanner:
+    build: .
+    image: pixel-scanner:production
+    container_name: pixel-scanner-batch
+    
+    # Resource limits for Rancher
+    deploy:
+      resources:
+        limits:
+          cpus: '6'
+          memory: 16G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    
+    # Mount volumes
+    volumes:
+      # Input directory (put your CSV/TXT files here)
+      - ./input:/app/input:ro
+      # Output directory (results will be saved here)
+      - ./output:/app/output:rw
+    
+    # Environment
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    # Run batch scan (modify command as needed)
+    # For portfolio mode (CSV):
+    command: ["/app/input/portfolio.csv", "/app/output", "--concurrent", "10", "--timeout", "30000"]
+    
+    # For on-demand mode (TXT):
+    # command: ["/app/input/domains.txt", "/app/output", "--concurrent", "5"]
+    
+    # Network
+    network_mode: bridge
+    
+    # Don't restart (batch job)
+    restart: "no"

@@ -1,10 +1,9 @@
-# Production Dockerfile for Pixel Detector
-# Optimized for Docker/Rancher deployment
-# NOT for Lambda - use locally or in container orchestration
+# Production-optimized Docker image for pixel-detector
+# Designed for enterprise deployments on Rancher/Kubernetes
 
 FROM python:3.11-slim
 
-# Install system dependencies for Playwright
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -32,31 +31,35 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
 
-# Copy poetry files first for better caching
+# Copy project files
 COPY pyproject.toml poetry.lock ./
+COPY src/ ./src/
+COPY monitor_progress.py analyze_scan_results.py run_production_scan.sh ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir poetry==1.8.5 && \
+RUN pip install poetry==1.8.5 && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root --only main
 
 # Install Playwright browsers
 RUN playwright install chromium
 
-# Copy application code
-COPY src/ ./src/
-COPY production_scanner.py url_handler.py ./
-
 # Create directories for input/output
-RUN mkdir -p /app/input /app/output
+RUN mkdir -p /app/input /app/results
 
-# Make sure Python can find our modules
-ENV PYTHONPATH=/app:/app/src
+# Set environment variables for production
+ENV PYTHONUNBUFFERED=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/browsers
 
-# Default entrypoint for production scanner
-ENTRYPOINT ["python", "/app/production_scanner.py"]
+# Health check (optional, can be disabled if DNS blocks it)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# Default shows help if no arguments
+# Default entrypoint for production scanning
+ENTRYPOINT ["python", "/app/src/pixel_detector/production_batch_scanner.py"]
+
+# Default command shows usage
 CMD ["--help"]
