@@ -166,6 +166,54 @@ def pixel_type(self) -> PixelType:
 3. **Async Test Patterns**: Always use `pytest.mark.asyncio` and AsyncMock
 4. **Coverage Strategy**: Start with models → detectors → CLI → scanner
 
+### CI/CD Debugging Lessons
+
+#### 🚨 Always Check Actual Error Logs!
+**Mistake**: Assumed GitHub Actions failure was due to Python 3.12 compatibility
+**Reality**: It was linting errors in newly created files
+
+**The Right Way**:
+```bash
+# List recent runs
+gh run list --limit 5
+
+# Get the actual error logs
+gh run view [RUN_ID] --log-failed
+
+# Or for the latest failed run
+gh run list --limit 1 --status failure --json databaseId -q '.[0].databaseId' | xargs gh run view --log-failed
+```
+
+**What Actually Happened**:
+- Created new files (`api.py`, `batch_manager.py`, `batch_processor.py`) during Docker work
+- These had 31 linting errors (unused imports, quote style, line length)
+- GitHub Actions runs `ruff check` and `mypy` which caught all issues
+- Misdiagnosed as Python version issue without checking logs
+
+**Common CI Linting Issues to Watch For**:
+1. **Import errors**: Unused imports, unsorted imports
+2. **Quote consistency**: Ruff prefers double quotes
+3. **Line length**: Max 120 characters
+4. **Exception handling**: Use `raise ... from e` for exception chaining
+5. **Security**: Don't bind to `0.0.0.0`, use `127.0.0.1` instead
+6. **Type annotations**: Every function needs return type (use `-> None` for void)
+7. **Untyped libraries**: Add `# type: ignore` for fastapi, uvicorn, etc.
+
+**Quick Fix Commands**:
+```bash
+# Auto-fix most linting issues
+poetry run ruff check src/ --fix
+
+# Check what can't be auto-fixed
+poetry run ruff check src/
+
+# Check type errors
+poetry run mypy src/
+
+# Run all CI checks locally before pushing
+poetry run pytest && poetry run ruff check src/ && poetry run mypy src/
+```
+
 ## Pixel Detection Patterns Reference
 
 ### Meta Pixel (Facebook)
