@@ -282,6 +282,25 @@ Reduce concurrency:
 --concurrent 1
 ```
 
+### System Sleep Interrupted Scan
+If your system went to sleep during a long scan:
+```bash
+# 1. Check how many domains were completed
+cat output/checkpoint.json | jq '.completed_domains | length'
+
+# 2. Resume from checkpoint (just run same command again)
+# The scanner will automatically skip completed domains
+docker run --rm \
+  -v $(pwd)/input:/app/input:ro \
+  -v $(pwd)/output:/app/output:rw \
+  --memory="16g" --cpus="6" \
+  pixel-scanner:production \
+  /app/input/portfolio.csv /app/output --concurrent 10
+
+# 3. IMPORTANT: Use caffeinate this time!
+caffeinate -d -i -m -s docker run ... # (same command with caffeinate prefix)
+```
+
 ## Checkpoint/Resume for Large Batches
 
 The scanner automatically saves progress every 10 domains, allowing you to resume interrupted scans.
@@ -358,9 +377,14 @@ docker stats pixel-scanner-batch
 5. **Use absolute paths** in production environments
 6. **Test with small batches first** before running thousands of domains
 7. **Keep logs for debugging** using `docker logs` command
+8. **Prevent system sleep** for long scans:
+   - **Mac**: Use `caffeinate -d` to prevent sleep
+   - **Linux**: Use `systemd-inhibit` or `caffeine`
+   - **Windows**: Use PowerToys Awake or adjust power settings
 
 ## Example Production Run
 
+### For Large Portfolio (1700+ domains)
 ```bash
 # 1. Prepare input
 mkdir -p input output
@@ -369,7 +393,12 @@ cp /path/to/portfolio.csv input/
 # 2. Build image
 docker build -t pixel-scanner:production .
 
-# 3. Run scan
+# 3. IMPORTANT: Prevent system sleep (for Mac)
+# Run in separate terminal or use screen/tmux
+caffeinate -d -i -m -s &
+CAFFEINE_PID=$!
+
+# 4. Run scan (will take 3-8 hours for 1700 domains)
 docker run --rm \
   --name pixel-scan-$(date +%Y%m%d-%H%M%S) \
   -v $(pwd)/input:/app/input:ro \
@@ -381,7 +410,23 @@ docker run --rm \
   --concurrent 10 \
   --timeout 30000
 
-# 4. Check results
+# 5. Stop caffeinate when done
+kill $CAFFEINE_PID
+
+# 6. Check results
 ls -la output/
+cat output/portfolio_results.csv | wc -l  # Count domains scanned
 cat output/portfolio_results.csv | head
+```
+
+### Alternative: Run with caffeinate wrapper
+```bash
+# One-liner that prevents sleep during entire scan
+caffeinate -d -i -m -s docker run --rm \
+  -v $(pwd)/input:/app/input:ro \
+  -v $(pwd)/output:/app/output:rw \
+  --memory="16g" --cpus="6" \
+  pixel-scanner:production \
+  /app/input/portfolio.csv /app/output \
+  --concurrent 10
 ```
