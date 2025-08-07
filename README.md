@@ -26,15 +26,26 @@ git clone https://github.com/minghsuy/pixel-detector-v2.git
 cd pixel-detector-v2
 poetry install
 poetry run playwright install chromium
+```
 
-# Portfolio scan (CSV with custom_id for data integration)
+### Choose Your Scanner:
+
+**Option 1: Production Scanner** (Fast, No Screenshots)
+```bash
+# Portfolio scan - CSV with custom_id (2-3 hrs for 1700 domains)
 poetry run python production_scanner.py portfolio.csv results/ --concurrent 10
 
-# On-demand scan (simple domain list) 
+# Simple domain list scan
 poetry run python production_scanner.py domains.txt quick_scan/
+```
 
-# Single site scan (using CLI)
-pixel-detector scan healthcare-site.com
+**Option 2: CLI Scanner** (Feature-Rich, With Screenshots)
+```bash
+# Single site scan with screenshot evidence
+pixel-detector scan healthcare-site.com --screenshot
+
+# Batch scan with screenshots
+pixel-detector batch sites.txt -o results/ --screenshot
 ```
 
 ## 📊 What It Detects
@@ -185,7 +196,21 @@ poetry run playwright install --with-deps chromium
 sudo poetry run playwright install chromium
 ```
 
-## 🚀 Production Scanner Features
+## 🚀 Scanner Comparison
+
+| Feature | Production Scanner | CLI Scanner |
+|---------|-------------------|-------------|
+| **Command** | `production_scanner.py` | `pixel-detector` |
+| **Speed** | ⚡ Fast (2-3 hrs/1700 domains) | 🐢 Slower with screenshots |
+| **Screenshots** | ❌ No | ✅ Yes (--screenshot flag) |
+| **CSV Support** | ✅ Yes (with custom_id) | ❌ No |
+| **Checkpoint/Resume** | ✅ Yes (every 10 domains) | ❌ No |
+| **Docker Optimized** | ✅ Yes | ⚠️ Works but slower |
+| **Best For** | Large portfolios, CI/CD | Evidence collection, reports |
+
+## 🚀 Production Scanner (No Screenshots)
+
+Optimized for speed and scale - processes pixels only, no visual capture.
 
 ### Smart URL Handling
 - **Automatic variations**: Tries https/http and www/non-www combinations
@@ -198,19 +223,15 @@ sudo poetry run playwright install chromium
 #### Portfolio Mode (CSV)
 ```bash
 # Input: CSV with custom_id and url columns
-# Use case: Large portfolios with data integration needs
+# Speed: ~4-6 seconds per domain (NO screenshots)
 poetry run python production_scanner.py portfolio.csv results/ --concurrent 10
-
-# Output includes: custom_id preserved for join-back to your data
 ```
 
 #### On-Demand Mode (TXT)
 ```bash
 # Input: Simple text file with domains
-# Use case: Quick scans of 10-50 domains
+# Speed: Fast scanning without visual evidence
 poetry run python production_scanner.py domains.txt results/ --concurrent 5
-
-# Output: Streamlined results without custom_id complexity
 ```
 
 ### Input Validation
@@ -218,16 +239,18 @@ poetry run python production_scanner.py domains.txt results/ --concurrent 5
 - Deduplicates: Scans each unique domain only once
 - Cleans: Removes protocols, paths, normalizes to SLD+TLD
 
-## 🚀 Usage Examples
+## 🚀 CLI Scanner Usage (With Screenshots)
+
+The `pixel-detector` CLI provides comprehensive scanning with optional screenshot evidence.
 
 ### Basic Scanning
 
 ```bash
-# Scan a single domain (handles various formats automatically)
+# Scan a single domain (NO screenshot by default)
 pixel-detector scan healthcare-site.com
-pixel-detector scan www.healthcare-site.com
-pixel-detector scan "healthcare-site.com/patient-portal"
-pixel-detector scan http://healthcare-site.com:8080
+
+# Scan WITH screenshot evidence (slower but provides visual proof)
+pixel-detector scan hospital.com --screenshot
 
 # The scanner will automatically:
 # - Add https:// if no protocol specified
@@ -237,16 +260,16 @@ pixel-detector scan http://healthcare-site.com:8080
 
 # Scan with custom timeout
 pixel-detector scan slow-site.com --timeout 60
-
-# Save screenshots for evidence
-pixel-detector scan hospital.com --screenshot
 ```
 
 ### Batch Operations
 
 ```bash
-# Scan multiple sites from file
+# Batch scan WITHOUT screenshots (faster)
 pixel-detector batch sites.txt -o results/
+
+# Batch scan WITH screenshots (slower, creates evidence)
+pixel-detector batch sites.txt -o results/ --screenshot
 
 # Scan with more concurrent connections (faster for many sites)
 pixel-detector batch large-list.txt --max-concurrent 10

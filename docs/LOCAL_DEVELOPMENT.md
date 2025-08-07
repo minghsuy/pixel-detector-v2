@@ -33,7 +33,7 @@ docker build -t pixel-scanner:local .
 ### 3. Prepare Test Data
 ```bash
 # Create directories
-mkdir -p docker-input docker-results docker-screenshots
+mkdir -p docker-input docker-results
 
 # Create a test file with sample domains
 cat > docker-input/test_domains.txt << EOF
@@ -47,6 +47,7 @@ EOF
 
 ### 4. Run Quick Test
 ```bash
+# Note: production_scanner.py does NOT capture screenshots (faster)
 docker run --rm \
   -v $(pwd)/docker-input:/app/input:ro \
   -v $(pwd)/docker-results:/app/output:rw \
