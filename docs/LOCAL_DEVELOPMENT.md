@@ -130,7 +130,7 @@ docker run --rm \
   -v $(pwd)/docker-results:/app/output:rw \
   --memory="8g" --cpus="4" \
   pixel-scanner:local \
-  batch /app/input/test_domains.txt /app/output
+  batch /app/input/test_domains.txt -o /app/output
 
 # Option C: Scan CSV file with custom IDs
 docker run --rm \
@@ -138,7 +138,7 @@ docker run --rm \
   -v $(pwd)/docker-results:/app/output:rw \
   --memory="8g" --cpus="4" \
   pixel-scanner:local \
-  batch /app/input/test_batch.csv /app/output
+  batch /app/input/test_batch.csv -o /app/output
 
 # Option D: Using the CLI directly (without Docker)
 poetry run pixel-detector batch docker-input/test_domains.txt -o docker-results/
@@ -238,7 +238,7 @@ docker run --rm \
   --memory="16g" --cpus="6" \
   --name portfolio-scan \
   pixel-scanner:local \
-  batch /app/input/domains.txt /app/results &
+  batch /app/input/domains.txt -o /app/results &
 
 # Monitor progress in separate terminal
 CONTAINER_ID=$(docker ps -q -f name=portfolio-scan)
@@ -293,8 +293,7 @@ docker run --rm \
   --cpus="8" \
   --platform linux/arm64 \
   pixel-scanner:local \
-  batch /app/input/domains.txt -o /app/results \
-  --max-concurrent 8
+  batch /app/input/domains.txt -o /app/results --max-concurrent 8
 ```
 
 ### 2. Batch Processing for Large Portfolios
@@ -325,7 +324,8 @@ docker run -it --rm \
   pixel-scanner:local
 
 # Inside container, test commands
-python -m pixel_detector scan example.com
+pixel-detector scan example.com
+pixel-detector batch /app/input/test_domains.txt -o /app/results
 ```
 
 ### 2. VSCode Debugger
@@ -381,7 +381,7 @@ docker run --rm \
   -v $(pwd)/docker-results:/app/output:rw \
   --memory="16g" --cpus="6" \
   pixel-scanner:local \
-  batch /app/input/portfolio.csv /app/output
+  batch /app/input/portfolio.csv -o /app/output
 
 # Results will include custom_id in output for easy mapping
 ```

@@ -1,30 +1,39 @@
-# Docker/Rancher Deployment Guide
+# Docker Deployment Guide
 
 ## Quick Start
 
 ### Build the Image
 ```bash
+# Regular build
 docker build -t pixel-scanner:production .
+
+# For corporate environments with proxy/SSL inspection
+./build-with-proxy.sh
 ```
 
-### Run Portfolio Scan (CSV with custom_id)
+### Run Single Domain Scan
+```bash
+docker run --rm pixel-scanner:production scan google.com
+```
+
+### Run Portfolio Scan (CSV with custom_id,url columns)
 ```bash
 docker run --rm \
   -v $(pwd)/input:/app/input:ro \
   -v $(pwd)/output:/app/output:rw \
   --memory="16g" --cpus="6" \
   pixel-scanner:production \
-  /app/input/portfolio.csv /app/output --concurrent 10
+  batch /app/input/portfolio.csv -o /app/output --max-concurrent 10
 ```
 
-### Run On-Demand Scan (TXT domain list)
+### Run Batch Scan (TXT domain list)
 ```bash
 docker run --rm \
   -v $(pwd)/input:/app/input:ro \
   -v $(pwd)/output:/app/output:rw \
   --memory="16g" --cpus="6" \
   pixel-scanner:production \
-  /app/input/domains.txt /app/output --concurrent 5
+  batch /app/input/domains.txt -o /app/output --max-concurrent 5
 ```
 
 ## Pre-Flight Testing (Recommended)
@@ -48,11 +57,11 @@ docker run --rm \
   -v $(pwd)/output:/app/output:rw \
   --memory="4g" --cpus="2" \
   pixel-scanner:production \
-  /app/input/test_domains.txt /app/output --concurrent 3
+  batch /app/input/test_domains.txt -o /app/output --max-concurrent 3
 
 # Verify outputs
-ls -la output/scan_results/    # Should see JSON files
-cat output/scan_results.csv    # Check CSV output
+ls -la output/    # Should see scan_results.csv and JSON files
+cat output/scan_results.csv    # Check CSV output with all results
 ```
 
 ## Input File Formats

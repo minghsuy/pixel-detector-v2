@@ -31,18 +31,15 @@ docker build \
     echo "Standard build failed. Trying alternative approach..."
     echo ""
     
-    # Option 2: Build with SSL verification disabled
-    echo "Option 2: Building with relaxed SSL (for testing only)..."
+    # Option 2: Build with more aggressive proxy handling
+    echo "Option 2: Trying alternative build approach..."
+    # Try with network host mode which sometimes helps with proxy issues
     docker build \
+      --network=host \
       --build-arg HTTP_PROXY="${HTTP_PROXY}" \
       --build-arg HTTPS_PROXY="${HTTPS_PROXY}" \
       --build-arg NO_PROXY="${NO_PROXY}" \
-      --build-arg NODE_TLS_REJECT_UNAUTHORIZED=0 \
-      --build-arg PYTHONHTTPSVERIFY=0 \
-      --build-arg REQUESTS_CA_BUNDLE="" \
-      --build-arg CURL_CA_BUNDLE="" \
-      -t pixel-scanner:corporate-nossl \
-      -f Dockerfile.corporate \
+      -t pixel-scanner:corporate \
       . || {
         echo ""
         echo "Both build attempts failed."
@@ -70,9 +67,17 @@ echo "   echo 'google.com' > domains.txt"
 echo "   echo 'facebook.com' >> domains.txt"
 echo "   "
 echo "   # Then run the batch scan"
-echo "   docker run --rm -v \$(pwd):/app/work pixel-scanner:corporate batch /app/work/domains.txt /app/work/output"
+echo "   docker run --rm -v \$(pwd):/app/work pixel-scanner:corporate batch /app/work/domains.txt -o /app/work/output"
 echo ""
-echo "3. Scan from CSV file (with custom_id column):"
-echo "   docker run --rm -v \$(pwd):/app/work pixel-scanner:corporate batch /app/work/portfolio.csv /app/work/results"
+echo "3. Scan from CSV file (with custom_id,url columns):"
+echo "   # Create CSV file"
+echo "   echo 'custom_id,url' > portfolio.csv"
+echo "   echo 'COMP001,healthcare.com' >> portfolio.csv"
+echo "   echo 'COMP002,hospital.org' >> portfolio.csv"
+echo "   "
+echo "   # Run batch scan"
+echo "   docker run --rm -v \$(pwd):/app/work pixel-scanner:corporate batch /app/work/portfolio.csv -o /app/work/results"
 echo ""
 echo "Note: Results will be saved in the output directory as scan_results.csv"
+echo "      CSV output includes: custom_id, url, domain, scan_status, has_pixel,"
+echo "      pixel_count, pixel_names (pipe-separated), timestamp, duration_seconds, error"

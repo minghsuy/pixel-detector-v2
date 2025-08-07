@@ -8,9 +8,13 @@ Detect tracking pixels on healthcare websites that may violate HIPAA. **Fast, re
 
 **Purpose-built for insurance workflows.** See our comprehensive [Adoption Guide](docs/business/CYBER_INSURANCE_ADOPTION.md) and [5-Minute Quick Start](docs/business/QUICK_START_INSURERS.md).
 
-### One-Command Deployment
+### One-Command Docker Build
 ```bash
-docker-compose up -d  # Full API + monitoring stack
+# For regular environments
+docker build -t pixel-scanner .
+
+# For corporate environments with proxy/SSL inspection
+./build-with-proxy.sh
 ```
 
 ### Integration Examples
@@ -28,24 +32,26 @@ poetry install
 poetry run playwright install chromium
 ```
 
-### Choose Your Scanner:
+### Quick Scan Examples:
 
-**Option 1: Production Scanner** (Fast, No Screenshots)
 ```bash
-# Portfolio scan - CSV with custom_id (2-3 hrs for 1700 domains)
-poetry run python production_scanner.py portfolio.csv results/ --concurrent 10
+# Single domain scan
+pixel-detector scan healthcare-site.com
 
-# Simple domain list scan
-poetry run python production_scanner.py domains.txt quick_scan/
-```
-
-**Option 2: CLI Scanner** (Feature-Rich, With Screenshots)
-```bash
-# Single site scan with screenshot evidence
+# With screenshot evidence
 pixel-detector scan healthcare-site.com --screenshot
 
-# Batch scan with screenshots
-pixel-detector batch sites.txt -o results/ --screenshot
+# Batch scan from CSV (custom_id,url columns)
+pixel-detector batch portfolio.csv -o results/
+
+# Batch scan from TXT (one domain per line)
+pixel-detector batch domains.txt -o results/
+
+# Docker: Single domain
+docker run --rm pixel-scanner scan google.com
+
+# Docker: Batch scan
+docker run --rm -v $(pwd):/work pixel-scanner batch /work/portfolio.csv -o /work/results
 ```
 
 ## 📊 What It Detects
@@ -142,20 +148,30 @@ pixel-detector batch sites.txt -o results/ --screenshot
 - **Subdomain and path support** - Works with complex URLs like `secure.hospital.com/patient-portal`
 - **Alternative suggestions** - Provides helpful alternatives when domains fail
 
-## 🐳 Docker/Rancher Deployment (v2.0 Production Ready!)
+## 🐳 Docker Deployment (v2.0 Production Ready!)
 
 Run Pixel Detector at scale with Docker containers:
 
-- **Production-ready**: Multiple Dockerfile options for different use cases
-- **Fargate deployment**: No time limits, perfect for large portfolio analysis
-- **Local development**: Full VSCode Docker integration guide
-- **Batch processing**: Handle thousands of domains efficiently
+- **Simple CLI interface**: Uses the proven pixel-detector CLI tool
+- **CSV batch processing**: Supports custom_id,url columns for portfolio analysis
+- **Corporate proxy support**: Works behind firewalls with SSL inspection
+- **Pre-cached dependencies**: Handles corporate environments gracefully
 
-**Get Started**: 
-- Local: [Docker VSCode Guide](docs/LOCAL_DEVELOPMENT.md)
-- AWS: [Fargate Deployment Guide](docs/archive/FARGATE_DEPLOYMENT.md)
+**Quick Start**:
+```bash
+# Build image
+./build-with-proxy.sh  # Handles corporate proxies automatically
 
-**Note**: Lambda is not recommended due to Playwright compatibility issues. Fargate provides better performance and reliability for batch scanning.
+# Run single scan
+docker run --rm pixel-scanner scan google.com
+
+# Run batch scan
+docker run --rm -v $(pwd):/work pixel-scanner batch /work/domains.csv -o /work/results
+```
+
+**Documentation**: 
+- [Docker Development Guide](docs/LOCAL_DEVELOPMENT.md) - Local and corporate setup
+- [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) - Production deployment
 
 ## 📦 Installation
 
@@ -196,48 +212,55 @@ poetry run playwright install --with-deps chromium
 sudo poetry run playwright install chromium
 ```
 
-## 🚀 Scanner Comparison
+## 🚀 Scanner Features
 
-| Feature | Production Scanner | CLI Scanner |
-|---------|-------------------|-------------|
-| **Command** | `production_scanner.py` | `pixel-detector` |
-| **Speed** | ⚡ Fast (2-3 hrs/1700 domains) | 🐢 Slower with screenshots |
-| **Screenshots** | ❌ No | ✅ Yes (--screenshot flag) |
-| **CSV Support** | ✅ Yes (with custom_id) | ❌ No |
-| **Checkpoint/Resume** | ✅ Yes (every 10 domains) | ❌ No |
-| **Docker Optimized** | ✅ Yes | ⚠️ Works but slower |
-| **Best For** | Large portfolios, CI/CD | Evidence collection, reports |
+| Feature | CLI Scanner (`pixel-detector`) |
+|---------|---------------------------------|
+| **Single Domain** | `pixel-detector scan domain.com` |
+| **Batch TXT** | `pixel-detector batch domains.txt -o results/` |
+| **Batch CSV** | `pixel-detector batch portfolio.csv -o results/` |
+| **Speed** | ⚡ Fast without screenshots (2-3 hrs/1700 domains) |
+| **Screenshots** | ✅ Optional (`--screenshot` flag) |
+| **CSV Support** | ✅ Yes (custom_id,url columns) |
+| **Docker Ready** | ✅ Fully optimized |
+| **Corporate Proxy** | ✅ Supported with build script |
+| **Output Format** | CSV with timestamps, duration, pipe-separated pixel names |
 
-## 🚀 Production Scanner (No Screenshots)
+## 🚀 Batch Processing
 
-Optimized for speed and scale - processes pixels only, no visual capture.
+### CSV Input Format
+For portfolio analysis with custom tracking:
+```csv
+custom_id,url
+COMP001,healthcare-site.com
+COMP002,hospital.org
+```
+
+### CSV Output Format
+Comprehensive results with timing and error tracking:
+```csv
+custom_id,url,domain,scan_status,has_pixel,pixel_count,pixel_names,timestamp,duration_seconds,error
+COMP001,healthcare-site.com,healthcare-site.com,success,1,2,google_analytics|meta_pixel,2025-01-21T10:30:45Z,3.45,
+COMP002,invalid-url,,rejected,0,0,,2025-01-21T10:30:46Z,0.01,Invalid domain format
+```
+
+### Batch Commands
+```bash
+# CSV with custom IDs (portfolio mode)
+pixel-detector batch portfolio.csv -o results/ --max-concurrent 10
+
+# TXT file (simple list mode)
+pixel-detector batch domains.txt -o results/ --max-concurrent 10
+
+# Docker batch processing
+docker run --rm -v $(pwd):/work pixel-scanner batch /work/portfolio.csv -o /work/results
+```
 
 ### Smart URL Handling
-- **Automatic variations**: Tries https/http and www/non-www combinations
-- **Handles redirects**: Follows 301/302 automatically (e.g., badensports.com → www.badensports.com)
-- **Fast timeouts**: 30s default, 60s max (no more 15-minute hangs!)
-- **International domains**: Supports IDN with punycode conversion
-
-### Two Workflow Modes
-
-#### Portfolio Mode (CSV)
-```bash
-# Input: CSV with custom_id and url columns
-# Speed: ~4-6 seconds per domain (NO screenshots)
-poetry run python production_scanner.py portfolio.csv results/ --concurrent 10
-```
-
-#### On-Demand Mode (TXT)
-```bash
-# Input: Simple text file with domains
-# Speed: Fast scanning without visual evidence
-poetry run python production_scanner.py domains.txt results/ --concurrent 5
-```
-
-### Input Validation
-- Automatically rejects: emails, phone numbers, "none", invalid domains
-- Deduplicates: Scans each unique domain only once
-- Cleans: Removes protocols, paths, normalizes to SLD+TLD
+- **Automatic normalization**: Cleans URLs, removes protocols, handles variations
+- **Invalid domain detection**: Flags and reports invalid entries
+- **Deduplication**: Scans each unique domain only once
+- **Error tracking**: Captures and reports all failures with reasons
 
 ## 🚀 CLI Scanner Usage (With Screenshots)
 
@@ -356,8 +379,8 @@ export PIXEL_DETECTOR_USER_AGENT="Custom Bot 1.0"
 - Testing: 91% code coverage achieved
 
 ### 🚧 In Progress  
-- Cloud deployment - ✅ Docker/Rancher/Kubernetes ready! See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md)
-- REST API development - ✅ FastAPI wrapper available with Docker
+- Cloud deployment - ✅ Docker/Kubernetes ready! See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md)
+- REST API development - FastAPI wrapper available
 - Web dashboard - Coming in future release
 
 ### 📅 Planned
@@ -370,8 +393,8 @@ export PIXEL_DETECTOR_USER_AGENT="Custom Bot 1.0"
 ## 📚 Documentation
 
 ### Deployment & Operations
-- [Docker/Rancher Deployment Guide](./DOCKER_DEPLOYMENT.md) - Production deployment with Docker
-- [Local Development Guide](./docs/LOCAL_DEVELOPMENT.md) - VSCode Docker setup for development
+- [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) - Production deployment with Docker
+- [Local Development Guide](./docs/LOCAL_DEVELOPMENT.md) - Docker setup for local and corporate environments
 - [Testing Documentation](./docs/TESTING.md) - Test patterns and coverage
 - [Testing Achievements](./docs/TESTING_ACHIEVEMENTS.md) - 91% coverage success story
 
