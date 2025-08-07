@@ -79,7 +79,7 @@ RUN if [ -n "$HTTPS_PROXY" ]; then \
 
 # Copy application code
 COPY src/ ./src/
-COPY production_scanner.py url_handler.py ./
+COPY production_scanner.py url_handler.py docker_wrapper.py ./
 
 # Create directories for input/output
 RUN mkdir -p /app/input /app/output
@@ -87,8 +87,8 @@ RUN mkdir -p /app/input /app/output
 # Make sure Python can find our modules
 ENV PYTHONPATH=/app:/app/src
 
-# Default entrypoint for production scanner
-ENTRYPOINT ["python", "/app/production_scanner.py"]
+# Default entrypoint using wrapper for better CLI experience
+ENTRYPOINT ["python", "/app/docker_wrapper.py"]
 
 # Default shows help if no arguments
 CMD ["--help"]

@@ -121,24 +121,26 @@ EOF
 
 ### 4. Run Quick Test
 ```bash
-# Option A: Scan text file (one domain per line)
-# Note: production_scanner.py does NOT capture screenshots (faster)
+# Option A: Scan a single domain (simplest test)
+docker run --rm pixel-scanner:local scan google.com
+
+# Option B: Scan text file (one domain per line)
 docker run --rm \
   -v $(pwd)/docker-input:/app/input:ro \
   -v $(pwd)/docker-results:/app/output:rw \
   --memory="8g" --cpus="4" \
   pixel-scanner:local \
-  /app/input/test_domains.txt /app/output --concurrent 5
+  batch /app/input/test_domains.txt /app/output
 
-# Option B: Scan CSV file with custom IDs
+# Option C: Scan CSV file with custom IDs
 docker run --rm \
   -v $(pwd)/docker-input:/app/input:ro \
   -v $(pwd)/docker-results:/app/output:rw \
   --memory="8g" --cpus="4" \
   pixel-scanner:local \
-  /app/input/test_batch.csv /app/output --concurrent 5
+  batch /app/input/test_batch.csv /app/output
 
-# Option C: Using the CLI directly (without Docker)
+# Option D: Using the CLI directly (without Docker)
 poetry run pixel-detector batch docker-input/test_domains.txt -o docker-results/
 ```
 
@@ -233,14 +235,10 @@ mkdir -p $OUTPUT_DIR
 docker run --rm \
   -v $(pwd)/docker-input:/app/input:ro \
   -v $(pwd)/$OUTPUT_DIR:/app/results:rw \
-  -v $(pwd)/docker-screenshots:/app/screenshots:rw \
   --memory="16g" --cpus="6" \
   --name portfolio-scan \
   pixel-scanner:local \
-  batch /app/input/domains.txt -o /app/results \
-  --screenshot \
-  --max-concurrent 5 \
-  --timeout 30000 &
+  batch /app/input/domains.txt /app/results &
 
 # Monitor progress in separate terminal
 CONTAINER_ID=$(docker ps -q -f name=portfolio-scan)
@@ -383,9 +381,7 @@ docker run --rm \
   -v $(pwd)/docker-results:/app/output:rw \
   --memory="16g" --cpus="6" \
   pixel-scanner:local \
-  /app/input/portfolio.csv /app/output \
-  --concurrent 5 \
-  --timeout 30000
+  batch /app/input/portfolio.csv /app/output
 
 # Results will include custom_id in output for easy mapping
 ```

@@ -116,7 +116,7 @@ RUN export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0 && \
 
 # Copy application code
 COPY src/ ./src/
-COPY production_scanner.py url_handler.py ./
+COPY production_scanner.py url_handler.py docker_wrapper.py ./
 
 # Create directories
 RUN mkdir -p /app/input /app/output /app/.tld_cache
@@ -147,5 +147,5 @@ EOF
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers \
     TLDEXTRACT_CACHE=/app/.tld_cache
 
-ENTRYPOINT ["python", "/app/production_scanner.py"]
+ENTRYPOINT ["python", "/app/docker_wrapper.py"]
 CMD ["--help"]
