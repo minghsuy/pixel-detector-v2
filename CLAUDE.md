@@ -120,6 +120,79 @@ ignore = ["S101", "B008", "UP007"]  # S101: assert in tests, B008: typer default
 poetry run pytest tests/ && poetry run ruff check src/ && poetry run mypy src/
 ```
 
+## Test-Driven Development Procedures
+
+### 🚨 CRITICAL: Test Everything Before Pushing to Remote
+
+Follow this strict workflow to ensure code quality and prevent broken builds:
+
+#### 1. Before ANY Code Changes
+```bash
+# Run all CI checks locally first
+poetry run pytest tests/ && poetry run ruff check src/ && poetry run mypy src/
+
+# If any check fails, fix it BEFORE making new changes
+```
+
+#### 2. Test-Driven Development Workflow
+1. **Write Tests First**: Create tests for the functionality you're about to implement
+2. **Run Tests to See Them Fail**: Verify tests fail for the right reason
+3. **Implement Minimal Code**: Write just enough code to make tests pass
+4. **Refactor**: Clean up code while keeping tests green
+5. **Run All Checks**: `poetry run pytest && poetry run ruff check src/ && poetry run mypy src/`
+
+#### 3. Docker Testing Protocol
+```bash
+# Always test Docker changes before pushing:
+
+# 1. Build the image
+docker build -t pixel-scanner:test .
+
+# 2. Test single scan
+docker run --rm pixel-scanner:test scan google.com
+
+# 3. Test CSV batch processing
+docker run --rm -v $(pwd)/test_input:/input -v $(pwd)/test_output:/output \
+  pixel-scanner:test batch /input/portfolio.csv -o /output
+
+# 4. Verify pixel detection is working
+docker run --rm pixel-scanner:test scan google.com | grep -E "google_analytics|google_ads"
+docker run --rm pixel-scanner:test scan facebook.com | grep "meta_pixel"
+```
+
+#### 4. Comprehensive Testing Checklist
+Before EVERY push to remote:
+- [ ] All unit tests pass: `poetry run pytest tests/`
+- [ ] Linter has no errors: `poetry run ruff check src/`
+- [ ] Type checker passes: `poetry run mypy src/`
+- [ ] Docker build succeeds: `docker build -t test .`
+- [ ] Docker scan works: `docker run --rm test scan google.com`
+- [ ] Pixel detection verified for ALL 8 types (not just Google)
+- [ ] CSV batch processing tested with custom_id,url format
+- [ ] GitHub Actions will pass (run all checks locally first)
+
+#### 5. Testing All Pixel Types
+```bash
+# Create comprehensive test file
+cat > test_all_pixels.csv << EOF
+custom_id,url
+GOOGLE,google.com
+META,facebook.com
+TIKTOK,tiktok.com
+LINKEDIN,linkedin.com
+TWITTER,twitter.com
+PINTEREST,pinterest.com
+SNAP,snapchat.com
+AMAZON,amazon.com
+EOF
+
+# Test with CLI
+poetry run pixel-detector batch test_all_pixels.csv -o test_results/
+
+# Verify results contain expected pixels
+cat test_results/scan_results.csv
+```
+
 ## Critical Lessons Learned
 
 ### 🚨 MANDATORY: Always Check Implementation First!

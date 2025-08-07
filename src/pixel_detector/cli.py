@@ -1,7 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -144,35 +144,36 @@ def batch(
     
     # Read input file - support both TXT and CSV
     import csv
-    from datetime import datetime
     import re
+    from datetime import datetime
     
-    domains_to_scan = []  # List of tuples: (custom_id, original_url, normalized_domain)
+    # List of tuples: (custom_id, original_url, normalized_domain)
+    domains_to_scan: list[tuple[str, str, str | None]] = []
     
-    if input_file.suffix.lower() == '.csv':
+    if input_file.suffix.lower() == ".csv":
         # CSV mode with custom_id,url columns
-        with open(input_file, newline='', encoding='utf-8') as f:
+        with open(input_file, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            if 'custom_id' not in reader.fieldnames or 'url' not in reader.fieldnames:
+            if not reader.fieldnames or "custom_id" not in reader.fieldnames or "url" not in reader.fieldnames:
                 logger.error("Error: CSV must have 'custom_id' and 'url' columns")
                 raise typer.Exit(1)
             
             for row in reader:
-                custom_id = row['custom_id'].strip()
-                url = row['url'].strip()
+                custom_id = row["custom_id"].strip()
+                url = row["url"].strip()
                 
                 if custom_id and url:
                     # Basic URL normalization
                     domain = url.lower()
                     # Remove common prefixes
-                    domain = re.sub(r'^(https?://)?(www\.)?', '', domain)
+                    domain = re.sub(r"^(https?://)?(www\.)?", "", domain)
                     # Remove trailing slashes and paths
-                    domain = domain.split('/')[0]
+                    domain = domain.split("/")[0]
                     # Remove port numbers
-                    domain = domain.split(':')[0]
+                    domain = domain.split(":")[0]
                     
                     # Basic validation
-                    if '.' in domain and len(domain) > 3:
+                    if "." in domain and len(domain) > 3:
                         domains_to_scan.append((custom_id, url, domain))
                     else:
                         domains_to_scan.append((custom_id, url, None))  # Invalid domain
@@ -186,8 +187,8 @@ def batch(
                     custom_id = f"LINE_{line_num}"
                     # Basic normalization
                     clean_domain = domain.lower()
-                    clean_domain = re.sub(r'^(https?://)?(www\.)?', '', clean_domain)
-                    clean_domain = clean_domain.split('/')[0].split(':')[0]
+                    clean_domain = re.sub(r"^(https?://)?(www\.)?", "", clean_domain)
+                    clean_domain = clean_domain.split("/")[0].split(":")[0]
                     domains_to_scan.append((custom_id, domain, clean_domain))
     
     if not domains_to_scan:
@@ -224,42 +225,42 @@ def batch(
     
     # Save CSV output with custom_id joined back
     csv_output = output_dir / "scan_results.csv"
-    with open(csv_output, 'w', newline='', encoding='utf-8') as f:
+    with open(csv_output, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([
-            'custom_id', 'url', 'domain', 'scan_status', 'has_pixel', 
-            'pixel_count', 'pixel_names', 'timestamp', 'duration_seconds', 'error'
+            "custom_id", "url", "domain", "scan_status", "has_pixel", 
+            "pixel_count", "pixel_names", "timestamp", "duration_seconds", "error"
         ])
         
-        scan_timestamp = datetime.now().isoformat() + 'Z'
+        scan_timestamp = datetime.now().isoformat() + "Z"
         
         for custom_id, original_url, domain in domains_to_scan:
             if not domain:
                 # Invalid domain
                 writer.writerow([
-                    custom_id, original_url, '', 'rejected', 0, 0, '', 
-                    scan_timestamp, 0, 'Invalid domain format'
+                    custom_id, original_url, "", "rejected", 0, 0, "", 
+                    scan_timestamp, 0, "Invalid domain format"
                 ])
             elif domain in results_map:
                 result = results_map[domain]
-                pixel_names = '|'.join([p.type.value for p in result.pixels_detected])
+                pixel_names = "|".join([p.type.value for p in result.pixels_detected])
                 duration = result.scan_metadata.scan_duration if result.scan_metadata else 0
                 
                 writer.writerow([
                     custom_id, original_url, domain, 
-                    'success' if result.success else 'failed',
+                    "success" if result.success else "failed",
                     1 if result.pixels_detected else 0,
                     len(result.pixels_detected),
                     pixel_names,
-                    result.timestamp.isoformat() + 'Z' if result.timestamp else scan_timestamp,
+                    result.timestamp.isoformat() + "Z" if result.timestamp else scan_timestamp,
                     f"{duration:.2f}",
-                    result.error_message or ''
+                    result.error_message or ""
                 ])
             else:
                 # Domain was valid but not in results
                 writer.writerow([
-                    custom_id, original_url, domain, 'not_scanned', 0, 0, '',
-                    scan_timestamp, 0, 'Scan skipped or failed'
+                    custom_id, original_url, domain, "not_scanned", 0, 0, "",
+                    scan_timestamp, 0, "Scan skipped or failed"
                 ])
     
     # Also save individual JSON results for backward compatibility
@@ -270,7 +271,7 @@ def batch(
     
     # Save summary JSON
     summary = []
-    for custom_id, original_url, domain in domains_to_scan:
+    for custom_id, _, domain in domains_to_scan:
         if domain and domain in results_map:
             result = results_map[domain]
             summary.append({
@@ -296,7 +297,7 @@ def batch(
     for custom_id, original_url, domain in domains_to_scan[:10]:  # Show first 10
         if domain and domain in results_map:
             result = results_map[domain]
-            pixel_names = '|'.join([p.type.value for p in result.pixels_detected])
+            pixel_names = "|".join([p.type.value for p in result.pixels_detected])
             table.add_row(
                 custom_id,
                 domain,
