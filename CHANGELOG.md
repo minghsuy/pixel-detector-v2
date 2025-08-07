@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0] - 2025-08-07
 
+### Fixed (2025-08-07 Update)
+- **Critical Bug Fix**: Production scanner was not detecting pixels correctly
+  - Removed broken `production_scanner.py` that had false negatives
+  - Now using the working CLI scanner that correctly detects all pixel types
+- **CLI Enhancement**: Added CSV batch support to existing CLI
+  - `pixel-detector batch` now accepts CSV files with custom_id,url columns
+  - Output includes timestamps and duration for each scan
+  - Pipe-separated pixel names for easy parsing
+- **Docker Simplification**
+  - Removed unnecessary wrapper scripts (docker_wrapper.py)
+  - Docker now uses the working CLI tool directly
+  - Fixed all Docker commands in documentation
+- **Documentation Cleanup**
+  - Updated all .md files to reflect simplified architecture
+  - Fixed Docker commands to use correct CLI syntax
+  - Added corporate proxy handling instructions
+  - Removed references to broken production_scanner.py
+
+### Removed (2025-08-07 Update)
+- `production_scanner.py` - Broken pixel detection (false negatives)
+- `docker_wrapper.py` - Unnecessary wrapper
+- `url_handler.py` - Redundant URL handling
+- `Dockerfile.corporate` - Consolidated into single Dockerfile
+
 ### Added
 - **Unified Production Scanner** (`production_scanner.py`)
   - Consolidated all scanner variants into single production-ready file
