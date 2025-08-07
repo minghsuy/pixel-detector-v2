@@ -86,18 +86,29 @@ async def main():
         results_file = output_dir / "scan_results.csv"
         if results_file.exists():
             print("\n" + "=" * 60)
-            with open(results_file, 'r') as f:
-                import csv
-                reader = csv.DictReader(f)
-                for row in reader:
-                    if row['status'] == 'success':
-                        if row['pixels_detected']:
-                            print(f"✅ Found pixels: {row['pixels_detected']}")
-                            print(f"   Risk levels: {row['risk_levels']}")
+            try:
+                with open(results_file, 'r') as f:
+                    import csv
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        # Handle on-demand output format from production_scanner
+                        scan_status = row.get('scan_status', 'unknown')
+                        if scan_status == 'success':
+                            pixel_count = int(row.get('pixel_count', 0))
+                            if pixel_count > 0:
+                                pixel_names = row.get('pixel_names', '')
+                                print(f"✅ Found {pixel_count} tracking pixel(s)")
+                                print(f"   Pixels: {pixel_names}")
+                            else:
+                                print("✅ No tracking pixels detected - site is clean")
+                        elif scan_status == 'failed':
+                            error = row.get('error', 'Unknown error')
+                            print(f"❌ Scan failed: {error}")
                         else:
-                            print("✅ No tracking pixels detected")
-                    else:
-                        print(f"❌ Scan failed: {row.get('error', 'Unknown error')}")
+                            print(f"⚠️  Scan status: {scan_status}")
+            except Exception as e:
+                print(f"Error reading results: {e}")
+                print("Scan may have completed but results format is unexpected")
         
         # Cleanup
         shutil.rmtree(temp_dir)
