@@ -27,6 +27,34 @@ docker run --rm \
   /app/input/domains.txt /app/output --concurrent 5
 ```
 
+## Pre-Flight Testing (Recommended)
+
+Before running large portfolios (1000+ domains), test with smaller batches to verify everything works correctly.
+
+### Quick Test (5-10 minutes)
+```bash
+# Create test file with 10 domains
+cat > input/test_domains.txt << EOF
+google.com
+stanford.edu
+mayo.edu
+cdc.gov
+badensports.com
+EOF
+
+# Run quick test
+docker run --rm \
+  -v $(pwd)/input:/app/input:ro \
+  -v $(pwd)/output:/app/output:rw \
+  --memory="4g" --cpus="2" \
+  pixel-scanner:production \
+  /app/input/test_domains.txt /app/output --concurrent 3
+
+# Verify outputs
+ls -la output/scan_results/    # Should see JSON files
+cat output/scan_results.csv    # Check CSV output
+```
+
 ## Input File Formats
 
 ### Portfolio Mode (CSV)
@@ -254,6 +282,73 @@ Reduce concurrency:
 --concurrent 1
 ```
 
+## Checkpoint/Resume for Large Batches
+
+The scanner automatically saves progress every 10 domains, allowing you to resume interrupted scans.
+
+### Resume an Interrupted Scan
+```bash
+# If a scan was interrupted, simply run the same command again
+# The scanner will automatically skip already-completed domains
+docker run --rm \
+  -v $(pwd)/input:/app/input:ro \
+  -v $(pwd)/output:/app/output:rw \
+  --memory="16g" --cpus="6" \
+  pixel-scanner:production \
+  /app/input/portfolio.csv /app/output --concurrent 10
+
+# Check checkpoint status
+cat output/checkpoint.json | jq '.completed_domains | length'
+```
+
+### Manual Checkpoint Management
+```bash
+# View checkpoint details
+cat output/checkpoint.json | jq '.'
+
+# Reset checkpoint to rescan all domains
+rm output/checkpoint.json
+
+# Keep checkpoint but clear results
+rm -rf output/scan_results/*.json
+```
+
+## Advanced Batch Processing
+
+### Memory Management for 15K+ Domains
+```bash
+# For very large batches (15,000+ domains)
+docker run --rm \
+  -v $(pwd)/input:/app/input:ro \
+  -v $(pwd)/output:/app/output:rw \
+  --memory="32g" --cpus="8" \
+  --shm-size="2g" \
+  pixel-scanner:production \
+  /app/input/mega_portfolio.csv /app/output \
+  --concurrent 12 \
+  --timeout 30000
+
+# Monitor memory usage
+docker stats pixel-scanner-batch
+```
+
+### Optimized Settings by Hardware
+
+#### For 32GB Mac M3 Pro
+```bash
+--memory="24g" --cpus="10" --concurrent 15
+```
+
+#### For 16GB Corporate Laptop
+```bash
+--memory="12g" --cpus="4" --concurrent 5
+```
+
+#### For Cloud/Server (64GB+)
+```bash
+--memory="48g" --cpus="16" --concurrent 20
+```
+
 ## Best Practices
 
 1. **Always set resource limits** to prevent container from consuming all resources
@@ -261,6 +356,8 @@ Reduce concurrency:
 3. **Monitor first few domains** to ensure scanning works
 4. **Save checkpoint regularly** (automatic every 10 domains)
 5. **Use absolute paths** in production environments
+6. **Test with small batches first** before running thousands of domains
+7. **Keep logs for debugging** using `docker logs` command
 
 ## Example Production Run
 

@@ -344,6 +344,27 @@ export PIXEL_DETECTOR_USER_AGENT="Custom Bot 1.0"
 - Email alerts for violations
 - Integration with GRC platforms
 
+## 📚 Documentation
+
+### Deployment & Operations
+- [Docker/Rancher Deployment Guide](./DOCKER_DEPLOYMENT.md) - Production deployment with Docker
+- [Local Development Guide](./docs/LOCAL_DEVELOPMENT.md) - VSCode Docker setup for development
+- [Testing Documentation](./docs/TESTING.md) - Test patterns and coverage
+- [Testing Achievements](./docs/TESTING_ACHIEVEMENTS.md) - 91% coverage success story
+
+### Business & Strategy
+- [Why This Matters](./docs/business/WHY_THIS_MATTERS.md) - $66M in HIPAA fines context
+- [Cyber Insurance Adoption](./docs/business/CYBER_INSURANCE_ADOPTION.md) - Insurance industry value prop
+- [Quick Start for Insurers](./docs/business/QUICK_START_INSURERS.md) - 5-minute proof of value
+
+### Technical Reference
+- [Architecture](./docs/architecture/) - System design and components
+- [Analysis Reports](./docs/analysis/) - Business case and improvements
+- [Example Results](./example_results/) - Real healthcare scan results
+
+### Archive
+- [AWS Fargate Guide](./docs/archive/FARGATE_DEPLOYMENT.md) - AWS deployment (alternative to Docker)
+
 ## 🤝 Contributing
 
 We welcome contributions! Key areas:

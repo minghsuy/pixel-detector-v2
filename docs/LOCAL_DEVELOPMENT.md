@@ -1,15 +1,15 @@
-# Local Docker Development Guide for MacBook Pro (M3 Pro)
+# Local Docker Development Guide
 
 ## Prerequisites
 
-1. **Docker Desktop for Mac** (Apple Silicon version)
+1. **Docker Desktop for Mac** (Apple Silicon/Intel)
    - Download from: https://www.docker.com/products/docker-desktop/
    - Allocate resources: Docker Desktop → Settings → Resources
-     - CPUs: 6-8 cores
-     - Memory: 16GB
-     - Disk: 100GB+
+     - CPUs: 4-8 cores (based on your hardware)
+     - Memory: 8-16GB
+     - Disk: 50GB+
 
-2. **VSCode Extensions**
+2. **VSCode Extensions** (Recommended)
    - Docker (by Microsoft)
    - Dev Containers (by Microsoft)
    - Python (by Microsoft)
@@ -26,8 +26,8 @@ code .
 ### 2. Build the Docker Image
 Open VSCode terminal (``Cmd+` ``) and run:
 ```bash
-# Build the safe scanner image
-docker build -f Dockerfile.safe -t pixel-scanner:local .
+# Build the production scanner image
+docker build -t pixel-scanner:local .
 ```
 
 ### 3. Prepare Test Data
@@ -35,22 +35,24 @@ docker build -f Dockerfile.safe -t pixel-scanner:local .
 # Create directories
 mkdir -p docker-input docker-results docker-screenshots
 
-# Generate test healthcare sites
-python scripts/get_top_healthcare_sites.py
-
-# Copy test file
-cp healthcare_quick_test.txt docker-input/
+# Create a test file with sample domains
+cat > docker-input/test_domains.txt << EOF
+google.com
+stanford.edu
+mayo.edu
+cdc.gov
+badensports.com
+EOF
 ```
 
-### 4. Run Quick Test (10 sites)
+### 4. Run Quick Test
 ```bash
 docker run --rm \
   -v $(pwd)/docker-input:/app/input:ro \
-  -v $(pwd)/docker-results:/app/results:rw \
-  -v $(pwd)/docker-screenshots:/app/screenshots:rw \
+  -v $(pwd)/docker-results:/app/output:rw \
   --memory="8g" --cpus="4" \
   pixel-scanner:local \
-  batch /app/input/healthcare_quick_test.txt -o /app/results --screenshot
+  /app/input/test_domains.txt /app/output --concurrent 5
 ```
 
 ## VSCode Docker Integration
@@ -72,7 +74,7 @@ Create `.vscode/tasks.json`:
     {
       "label": "Build Docker Image",
       "type": "shell",
-      "command": "docker build -f Dockerfile.safe -t pixel-scanner:local .",
+      "command": "docker build -t pixel-scanner:local .",
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -82,7 +84,7 @@ Create `.vscode/tasks.json`:
     {
       "label": "Run Quick Scan",
       "type": "shell",
-      "command": "docker run --rm -v $(pwd)/docker-input:/app/input:ro -v $(pwd)/docker-results:/app/results:rw -v $(pwd)/docker-screenshots:/app/screenshots:rw --memory='8g' --cpus='4' pixel-scanner:local batch /app/input/healthcare_quick_test.txt -o /app/results --screenshot",
+      "command": "docker run --rm -v $(pwd)/docker-input:/app/input:ro -v $(pwd)/docker-results:/app/output:rw --memory='8g' --cpus='4' pixel-scanner:local /app/input/test_domains.txt /app/output --concurrent 5",
       "dependsOn": ["Build Docker Image"],
       "group": "test",
       "presentation": {
@@ -93,7 +95,7 @@ Create `.vscode/tasks.json`:
     {
       "label": "View Results",
       "type": "shell",
-      "command": "cat docker-results/summary.json | jq .",
+      "command": "cat docker-results/scan_results.csv | head -20",
       "group": "test",
       "presentation": {
         "reveal": "always",
