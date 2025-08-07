@@ -186,6 +186,26 @@ spec:
   backoffLimit: 2
 ```
 
+## Scanner Options & Configuration
+
+### Available Command-Line Options
+```bash
+# production_scanner.py accepts these options:
+--concurrent N      # Max concurrent scans (default: 5, recommended: 10-15)
+--timeout N         # Timeout in milliseconds (default: 30000, max: 60000)
+--mode MODE         # Force mode: portfolio or ondemand (default: auto-detect)
+--no-variations     # Disable URL variations (only try https://domain)
+```
+
+### What the Scanner Does
+- ✅ **Detects 8 pixel types**: Meta, Google Analytics, Google Ads, TikTok, LinkedIn, Twitter, Pinterest, Snapchat
+- ✅ **Network monitoring**: Captures tracking requests
+- ✅ **DOM inspection**: Finds tracking scripts
+- ✅ **Cookie detection**: Identifies tracking cookies
+- ❌ **No screenshots**: Faster scanning without visual capture
+- ✅ **Smart retries**: Tries www/non-www, http/https variations
+- ✅ **Checkpoint/resume**: Saves progress every 10 domains
+
 ## Performance Tuning
 
 ### For Large Portfolios (1000+ domains)
@@ -398,7 +418,7 @@ docker build -t pixel-scanner:production .
 caffeinate -d -i -m -s &
 CAFFEINE_PID=$!
 
-# 4. Run scan (will take 3-8 hours for 1700 domains)
+# 4. Run scan (2-3 hours for 1700 domains)
 docker run --rm \
   --name pixel-scan-$(date +%Y%m%d-%H%M%S) \
   -v $(pwd)/input:/app/input:ro \
@@ -416,8 +436,14 @@ kill $CAFFEINE_PID
 # 6. Check results
 ls -la output/
 cat output/portfolio_results.csv | wc -l  # Count domains scanned
-cat output/portfolio_results.csv | head
+grep ",1," output/portfolio_results.csv | wc -l  # Count sites with pixels
 ```
+
+#### Performance Notes
+- **No screenshots**: production_scanner.py doesn't capture screenshots (faster)
+- **2-3 hours for 1700 domains**: ~4-6 seconds per domain with concurrent=10
+- **Adjust concurrency**: Increase to 15-20 if network/CPU allows
+- **Timeout**: 30 seconds default is good for most sites
 
 ### Alternative: Run with caffeinate wrapper
 ```bash
