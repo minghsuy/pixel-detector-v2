@@ -16,6 +16,20 @@
 
 ## Quick Start (5 Minutes)
 
+### For Corporate Environments with SSL Inspection
+If you're behind a corporate firewall with SSL inspection:
+```bash
+# Option 1: Build with your corporate certificates
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  -t pixel-scanner:local .
+
+# Option 2: Disable SSL verification (not recommended for production)
+export REQUESTS_CA_BUNDLE=""
+export SSL_CERT_FILE=""
+```
+
 ### 1. Clone and Open in VSCode
 ```bash
 git clone <your-repo>
@@ -35,7 +49,7 @@ docker build -t pixel-scanner:local .
 # Create directories
 mkdir -p docker-input docker-results
 
-# Create a test file with sample domains
+# Option A: Simple text file with domains (one per line)
 cat > docker-input/test_domains.txt << EOF
 google.com
 stanford.edu
@@ -43,10 +57,21 @@ mayo.edu
 cdc.gov
 badensports.com
 EOF
+
+# Option B: CSV file with custom IDs (for batch processing)
+cat > docker-input/test_batch.csv << EOF
+custom_id,url
+GOOG,google.com
+STAN,stanford.edu
+MAYO,mayo.edu
+CDC,cdc.gov
+BADEN,badensports.com
+EOF
 ```
 
 ### 4. Run Quick Test
 ```bash
+# Option A: Scan text file (one domain per line)
 # Note: production_scanner.py does NOT capture screenshots (faster)
 docker run --rm \
   -v $(pwd)/docker-input:/app/input:ro \
@@ -54,6 +79,17 @@ docker run --rm \
   --memory="8g" --cpus="4" \
   pixel-scanner:local \
   /app/input/test_domains.txt /app/output --concurrent 5
+
+# Option B: Scan CSV file with custom IDs
+docker run --rm \
+  -v $(pwd)/docker-input:/app/input:ro \
+  -v $(pwd)/docker-results:/app/output:rw \
+  --memory="8g" --cpus="4" \
+  pixel-scanner:local \
+  /app/input/test_batch.csv /app/output --concurrent 5
+
+# Option C: Using the CLI directly (without Docker)
+poetry run pixel-detector batch docker-input/test_domains.txt -o docker-results/
 ```
 
 ## VSCode Docker Integration
@@ -268,6 +304,48 @@ Create `.vscode/launch.json`:
   ]
 }
 ```
+
+## Batch Processing with CSV Files
+
+### CSV Format
+The tool supports CSV files with the following format:
+```csv
+custom_id,url
+COMPANY001,example-healthcare.com
+COMPANY002,another-provider.org
+```
+
+### Running Batch Scans
+```bash
+# Create a CSV file
+cat > docker-input/portfolio.csv << EOF
+custom_id,url
+KAISER,kaiserpermanente.org
+CIGNA,cigna.com
+AETNA,aetna.com
+ANTHEM,anthem.com
+UNITED,uhc.com
+EOF
+
+# Run the batch scan
+docker run --rm \
+  -v $(pwd)/docker-input:/app/input:ro \
+  -v $(pwd)/docker-results:/app/output:rw \
+  --memory="16g" --cpus="6" \
+  pixel-scanner:local \
+  /app/input/portfolio.csv /app/output \
+  --concurrent 5 \
+  --timeout 30000
+
+# Results will include custom_id in output for easy mapping
+```
+
+### Output Files
+Batch processing creates:
+- `scan_results.csv` - Main results with pixel findings
+- `summary.json` - Statistics and overview
+- `failed_domains.txt` - List of domains that couldn't be scanned
+- Individual JSON files for each domain (optional)
 
 ## Expected Performance
 

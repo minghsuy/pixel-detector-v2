@@ -4,6 +4,14 @@
 
 FROM python:3.11-slim
 
+# Corporate proxy configuration (uncomment and set if needed)
+# ARG HTTP_PROXY
+# ARG HTTPS_PROXY
+# ARG NO_PROXY
+# ENV HTTP_PROXY=${HTTP_PROXY}
+# ENV HTTPS_PROXY=${HTTPS_PROXY}
+# ENV NO_PROXY=${NO_PROXY}
+
 # Install system dependencies for Playwright
 RUN apt-get update && apt-get install -y \
     wget \
@@ -41,6 +49,12 @@ COPY pyproject.toml poetry.lock ./
 RUN pip install --no-cache-dir poetry==1.8.5 && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root --only main
+
+# Pre-cache tldextract public suffix list during build
+# This prevents SSL certificate issues at runtime in corporate environments
+RUN python -c "import tldextract; tldextract.extract('example.com')" && \
+    echo "Successfully cached public suffix list" || \
+    echo "Warning: Could not pre-cache public suffix list, will try at runtime"
 
 # Install Playwright browsers
 RUN playwright install chromium
