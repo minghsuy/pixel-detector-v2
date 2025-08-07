@@ -17,18 +17,68 @@
 ## Quick Start (5 Minutes)
 
 ### For Corporate Environments with SSL Inspection
-If you're behind a corporate firewall with SSL inspection:
+
+#### Quick Fix (Most Corporate Laptops)
 ```bash
-# Option 1: Build with your corporate certificates
+# Use the automated build script
+chmod +x build-with-proxy.sh
+./build-with-proxy.sh
+```
+
+#### Manual Build Options
+
+**Option 1: Standard proxy build**
+```bash
 docker build \
   --build-arg HTTP_PROXY=$HTTP_PROXY \
   --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --build-arg NO_PROXY=$NO_PROXY \
   -t pixel-scanner:local .
-
-# Option 2: Disable SSL verification (not recommended for production)
-export REQUESTS_CA_BUNDLE=""
-export SSL_CERT_FILE=""
 ```
+
+**Option 2: Corporate Dockerfile (when standard fails)**
+```bash
+# Uses aggressive proxy handling and SSL bypass
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --build-arg NO_PROXY=$NO_PROXY \
+  -f Dockerfile.corporate \
+  -t pixel-scanner:corporate .
+```
+
+**Option 3: With corporate CA certificate**
+```bash
+# First, get your corporate CA certificate
+# On Mac: Security & Privacy → Certificates → Export your corporate CA
+# Save as corporate-ca.crt
+
+# Build with certificate
+docker build \
+  --build-arg HTTP_PROXY=$HTTP_PROXY \
+  --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+  --add-host=pypi.org:151.101.0.63 \
+  --add-host=files.pythonhosted.org:151.101.113.63 \
+  -t pixel-scanner:local .
+```
+
+#### Troubleshooting Corporate Build Issues
+
+1. **"SSL certificate verify failed"**
+   - Use `Dockerfile.corporate` which disables SSL verification
+   - Or export: `export NODE_TLS_REJECT_UNAUTHORIZED=0`
+
+2. **"Cannot connect to proxy"**
+   - Verify proxy: `curl -I -x $HTTP_PROXY https://google.com`
+   - Check authentication: Your proxy might need credentials
+
+3. **"Playwright download failed"**
+   - The corporate Dockerfile includes fallback methods
+   - Worst case: Download Chromium manually and mount it
+
+4. **"tldextract cannot download public suffix list"**
+   - This is handled gracefully - the tool will still work
+   - Uses a fallback parser for domain extraction
 
 ### 1. Clone and Open in VSCode
 ```bash
