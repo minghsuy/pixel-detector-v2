@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-08-07
+
+### Added
+- **Unified Production Scanner** (`production_scanner.py`)
+  - Consolidated all scanner variants into single production-ready file
+  - Smart URL variations (automatically tries www/non-www, http/https)
+  - Two workflow modes:
+    - Portfolio mode: CSV with custom_id for data integration
+    - On-demand mode: Simple TXT domain list
+  - Checkpoint/resume capability for interrupted scans
+  - Proper input validation (rejects emails, phones, "none")
+  - Memory-efficient streaming saves
+- **Production Docker Support**
+  - Simplified `Dockerfile` for production use
+  - `docker-compose.batch.yml` for batch processing
+  - `DOCKER_DEPLOYMENT.md` comprehensive deployment guide
+  - Rancher/Kubernetes deployment examples
+- **URL Handler** (`url_handler.py`)
+  - RFC-compliant domain validation
+  - International domain (IDN) support with punycode
+  - TLD validation using public suffix list
+  - Handles IP addresses and ports
+
+### Changed
+- **Major Refactor**: Consolidated multiple scanner files into one
+  - Removed: ultra_reliable_scanner.py, strict_scanner.py, smart_url_scanner.py
+  - Removed: unified_pipeline.py, pipeline_processor.py
+  - Single source of truth: production_scanner.py
+- **Timeout Improvements**
+  - Default 30s timeout (was variable)
+  - Maximum 60s timeout (prevents 15+ minute hangs)
+  - Configurable per deployment
+- **Better Error Handling**
+  - Specific rejection messages for invalid input
+  - Clear distinction between validation and scan failures
+  - Detailed error logging
+
+### Removed
+- **Lambda Deployment** (completely removed)
+  - Deleted all Lambda-related files and documentation
+  - Focus on Docker/Rancher deployment only
+  - Removed lambda_handler.py, AWS_LAMBDA_DEPLOYMENT_GUIDE.md
+  - Removed test_lambda_handler.py
+- **Redundant Docker Files**
+  - Removed Dockerfile.api, Dockerfile.safe, Dockerfile.secure
+  - Removed Dockerfile.lambda, Dockerfile.test, Dockerfile.ultra
+  - Single production Dockerfile
+
+### Fixed
+- **URL Redirect Handling**: Now properly handles domains that redirect
+  - Example: badensports.com → www.badensports.com
+  - Tries multiple variations before giving up
+- **Memory Issues**: Results now stream to disk immediately
+- **Timeout Issues**: Hard limits prevent infinite hangs
+- **Input Validation**: Properly rejects invalid data before scanning
+- **Docker Compatibility**: Fixed module imports for container environment
+- **GitHub Actions**: Fixed CI/CD pipeline for new structure
+
+### Documentation
+- Added `DOCKER_DEPLOYMENT.md` - Main deployment guide for Docker/Rancher
+- Updated `README.md` with new scanner usage
+- Updated `.gitignore` to exclude test files and redundant code
+- Removed all Lambda-related documentation
+
+### Breaking Changes
+- Command-line interface changed for production_scanner.py
+- Lambda deployment no longer supported
+- Must use new production_scanner.py instead of individual scanner files
+- CSV format requires exactly `custom_id` and `url` columns
+
 ## [0.3.0] - 2025-08-06
 
 ### Added
