@@ -142,19 +142,66 @@ def batch(
         logger.error(f"Error: Input file {input_file} not found")
         raise typer.Exit(1)
     
-    # Read domains
-    domains = []
-    with open(input_file) as f:
-        for line in f:
-            domain = line.strip()
-            if domain and not domain.startswith("#"):
-                domains.append(domain)
+    # Read input file - support both TXT and CSV
+    import csv
+    from datetime import datetime
+    import re
     
-    if not domains:
+    domains_to_scan = []  # List of tuples: (custom_id, original_url, normalized_domain)
+    
+    if input_file.suffix.lower() == '.csv':
+        # CSV mode with custom_id,url columns
+        with open(input_file, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            if 'custom_id' not in reader.fieldnames or 'url' not in reader.fieldnames:
+                logger.error("Error: CSV must have 'custom_id' and 'url' columns")
+                raise typer.Exit(1)
+            
+            for row in reader:
+                custom_id = row['custom_id'].strip()
+                url = row['url'].strip()
+                
+                if custom_id and url:
+                    # Basic URL normalization
+                    domain = url.lower()
+                    # Remove common prefixes
+                    domain = re.sub(r'^(https?://)?(www\.)?', '', domain)
+                    # Remove trailing slashes and paths
+                    domain = domain.split('/')[0]
+                    # Remove port numbers
+                    domain = domain.split(':')[0]
+                    
+                    # Basic validation
+                    if '.' in domain and len(domain) > 3:
+                        domains_to_scan.append((custom_id, url, domain))
+                    else:
+                        domains_to_scan.append((custom_id, url, None))  # Invalid domain
+    else:
+        # TXT mode - one domain per line
+        with open(input_file) as f:
+            for line_num, line in enumerate(f, 1):
+                domain = line.strip()
+                if domain and not domain.startswith("#"):
+                    # Use line number as custom_id for TXT files
+                    custom_id = f"LINE_{line_num}"
+                    # Basic normalization
+                    clean_domain = domain.lower()
+                    clean_domain = re.sub(r'^(https?://)?(www\.)?', '', clean_domain)
+                    clean_domain = clean_domain.split('/')[0].split(':')[0]
+                    domains_to_scan.append((custom_id, domain, clean_domain))
+    
+    if not domains_to_scan:
         logger.error("Error: No domains found in input file")
         raise typer.Exit(1)
     
-    logger.info(f"Found {len(domains)} domains to scan")
+    # Extract valid domains for scanning
+    valid_domains = [d[2] for d in domains_to_scan if d[2]]
+    invalid_count = len([d for d in domains_to_scan if not d[2]])
+    
+    if invalid_count > 0:
+        logger.warning(f"Found {invalid_count} invalid domain(s) that will be marked as rejected")
+    
+    logger.info(f"Found {len(valid_domains)} valid domains to scan")
     
     scanner = PixelScanner(
         headless=headless,
@@ -169,47 +216,105 @@ def batch(
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Run scans
-    results = asyncio.run(scanner.scan_multiple(domains))
+    # Run scans on valid domains only
+    results = asyncio.run(scanner.scan_multiple(valid_domains)) if valid_domains else []
     
-    # Save results
-    summary: list[dict[str, Any]] = []
+    # Create a map of domain -> result for joining
+    results_map = {r.domain: r for r in results}
+    
+    # Save CSV output with custom_id joined back
+    csv_output = output_dir / "scan_results.csv"
+    with open(csv_output, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'custom_id', 'url', 'domain', 'scan_status', 'has_pixel', 
+            'pixel_count', 'pixel_names', 'timestamp', 'duration_seconds', 'error'
+        ])
+        
+        scan_timestamp = datetime.now().isoformat() + 'Z'
+        
+        for custom_id, original_url, domain in domains_to_scan:
+            if not domain:
+                # Invalid domain
+                writer.writerow([
+                    custom_id, original_url, '', 'rejected', 0, 0, '', 
+                    scan_timestamp, 0, 'Invalid domain format'
+                ])
+            elif domain in results_map:
+                result = results_map[domain]
+                pixel_names = '|'.join([p.type.value for p in result.pixels_detected])
+                duration = result.scan_metadata.scan_duration if result.scan_metadata else 0
+                
+                writer.writerow([
+                    custom_id, original_url, domain, 
+                    'success' if result.success else 'failed',
+                    1 if result.pixels_detected else 0,
+                    len(result.pixels_detected),
+                    pixel_names,
+                    result.timestamp.isoformat() + 'Z' if result.timestamp else scan_timestamp,
+                    f"{duration:.2f}",
+                    result.error_message or ''
+                ])
+            else:
+                # Domain was valid but not in results
+                writer.writerow([
+                    custom_id, original_url, domain, 'not_scanned', 0, 0, '',
+                    scan_timestamp, 0, 'Scan skipped or failed'
+                ])
+    
+    # Also save individual JSON results for backward compatibility
     for result in results:
-        # Save individual result
         domain_file = output_dir / f"{result.domain.replace('.', '_')}.json"
         with open(domain_file, "w") as f:
             json.dump(result.model_dump(), f, indent=2, default=str)
-        
-        # Add to summary
-        summary.append({
-            "domain": result.domain,
-            "pixels_found": len(result.pixels_detected),
-            "pixel_types": [p.type.value for p in result.pixels_detected],
-            "success": result.success,
-        })
     
-    # Save summary
+    # Save summary JSON
+    summary = []
+    for custom_id, original_url, domain in domains_to_scan:
+        if domain and domain in results_map:
+            result = results_map[domain]
+            summary.append({
+                "custom_id": custom_id,
+                "domain": result.domain,
+                "pixels_found": len(result.pixels_detected),
+                "pixel_types": [p.type.value for p in result.pixels_detected],
+                "success": result.success,
+            })
+    
     summary_file = output_dir / "summary.json"
     with open(summary_file, "w") as f:
         json.dump(summary, f, indent=2)
     
     # Print summary table
     table = Table(title="Batch Scan Summary")
+    table.add_column("Custom ID", style="cyan")
     table.add_column("Domain", style="cyan")
-    table.add_column("Pixels Found", style="yellow")
-    table.add_column("Types", style="red")
     table.add_column("Status", style="green")
+    table.add_column("Pixels", style="yellow")
+    table.add_column("Types", style="red")
     
-    for item in summary:
-        table.add_row(
-            str(item["domain"]),
-            str(item["pixels_found"]),
-            ", ".join(str(t) for t in item["pixel_types"]) if item["pixel_types"] else "None",
-            "✓" if item["success"] else "✗",
-        )
+    for custom_id, original_url, domain in domains_to_scan[:10]:  # Show first 10
+        if domain and domain in results_map:
+            result = results_map[domain]
+            pixel_names = '|'.join([p.type.value for p in result.pixels_detected])
+            table.add_row(
+                custom_id,
+                domain,
+                "✓" if result.success else "✗",
+                str(len(result.pixels_detected)),
+                pixel_names if pixel_names else "None"
+            )
+        elif domain:
+            table.add_row(custom_id, domain, "⚠", "0", "Not scanned")
+        else:
+            table.add_row(custom_id, original_url[:30], "✗", "0", "Invalid")
+    
+    if len(domains_to_scan) > 10:
+        console.print(f"[dim]... and {len(domains_to_scan) - 10} more[/dim]")
     
     console.print(table)
     logger.info(f"\nResults saved to {output_dir}/")
+    logger.info(f"CSV output: {csv_output}")
 
 
 @app.command()

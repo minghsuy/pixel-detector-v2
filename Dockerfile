@@ -1,12 +1,9 @@
-# Production Dockerfile for Pixel Detector
-# Optimized for Docker/Rancher deployment
-# NOT for Lambda - use locally or in container orchestration
+# Simplified Dockerfile for Pixel Detector
+# Uses the working CLI tool that correctly detects pixels
 
 FROM python:3.11-slim
 
-# Corporate proxy configuration
-# Set these via --build-arg when building behind a proxy:
-# docker build --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ...
+# Corporate proxy support (optional)
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG NO_PROXY
@@ -49,46 +46,38 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy poetry files first for better caching
+# Copy project files
 COPY pyproject.toml poetry.lock ./
 
-# Install Python dependencies with proxy support
-RUN if [ -n "$HTTP_PROXY" ]; then \
-        pip config set global.proxy $HTTP_PROXY; \
-    fi && \
-    pip install --no-cache-dir poetry==1.8.5 && \
+# Install Python dependencies
+RUN pip install --no-cache-dir poetry==1.8.5 && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root --only main
 
-# Pre-cache tldextract public suffix list during build
-# This prevents SSL certificate issues at runtime in corporate environments
-# If behind proxy, this might fail - that's OK, we'll handle it at runtime
-RUN python -c "import os; os.environ['REQUESTS_CA_BUNDLE'] = ''; \
-    import tldextract; tldextract.extract('example.com')" && \
+# Pre-cache tldextract public suffix list
+RUN python -c "import tldextract; tldextract.extract('example.com')" && \
     echo "Successfully cached public suffix list" || \
     echo "Warning: Could not pre-cache public suffix list, will try at runtime"
 
-# Install Playwright browsers with proxy support
-# Note: Playwright respects HTTP_PROXY/HTTPS_PROXY environment variables
-RUN if [ -n "$HTTPS_PROXY" ]; then \
-        export PLAYWRIGHT_DOWNLOAD_HOST="$HTTPS_PROXY" || true; \
-    fi && \
-    playwright install chromium || \
+# Install Playwright browsers
+RUN playwright install chromium || \
     (echo "Warning: Playwright install failed, trying without SSL verification" && \
      NODE_TLS_REJECT_UNAUTHORIZED=0 playwright install chromium)
 
 # Copy application code
 COPY src/ ./src/
-COPY production_scanner.py url_handler.py docker_wrapper.py ./
+
+# Install the package
+RUN poetry install --no-interaction --no-ansi --only-root
 
 # Create directories for input/output
 RUN mkdir -p /app/input /app/output
 
-# Make sure Python can find our modules
+# Set Python path
 ENV PYTHONPATH=/app:/app/src
 
-# Default entrypoint using wrapper for better CLI experience
-ENTRYPOINT ["python", "/app/docker_wrapper.py"]
+# Use the CLI tool as entrypoint
+ENTRYPOINT ["pixel-detector"]
 
-# Default shows help if no arguments
+# Default command shows help
 CMD ["--help"]
