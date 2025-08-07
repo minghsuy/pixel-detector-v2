@@ -67,8 +67,8 @@ RUN playwright install chromium || \
 # Copy application code
 COPY src/ ./src/
 
-# Install the package
-RUN poetry install --no-interaction --no-ansi --only-root
+# Install the package with entry points
+RUN poetry install --no-interaction --no-ansi
 
 # Create directories for input/output
 RUN mkdir -p /app/input /app/output
@@ -76,8 +76,8 @@ RUN mkdir -p /app/input /app/output
 # Set Python path
 ENV PYTHONPATH=/app:/app/src
 
-# Use the CLI tool as entrypoint
-ENTRYPOINT ["pixel-detector"]
+# Use poetry run as entrypoint since we're not using virtualenv
+ENTRYPOINT ["poetry", "run", "pixel-detector"]
 
 # Default command shows help
 CMD ["--help"]
