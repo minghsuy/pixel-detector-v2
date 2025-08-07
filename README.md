@@ -2,11 +2,11 @@
 
 Detect tracking pixels on healthcare websites that may violate HIPAA. **Fast, reliable scans** with smart URL handling and enterprise features.
 
-📊 [Why This Matters](WHY_THIS_MATTERS.md) | 📈 [Real Results](example_results/) | 🏥 [Healthcare Analysis](results/) | 🏦 [For Insurers](CYBER_INSURANCE_ADOPTION.md)
+📊 [Why This Matters](docs/business/WHY_THIS_MATTERS.md) | 📈 [Real Results](example_results/) | 🏥 [Healthcare Analysis](results/) | 🏦 [For Insurers](docs/business/CYBER_INSURANCE_ADOPTION.md)
 
 ## 🏦 For Cyber Insurers
 
-**Purpose-built for insurance workflows.** See our comprehensive [Adoption Guide](CYBER_INSURANCE_ADOPTION.md) and [5-Minute Quick Start](QUICK_START_INSURERS.md).
+**Purpose-built for insurance workflows.** See our comprehensive [Adoption Guide](docs/business/CYBER_INSURANCE_ADOPTION.md) and [5-Minute Quick Start](docs/business/QUICK_START_INSURERS.md).
 
 ### One-Command Deployment
 ```bash
@@ -131,7 +131,7 @@ pixel-detector scan healthcare-site.com
 - **Subdomain and path support** - Works with complex URLs like `secure.hospital.com/patient-portal`
 - **Alternative suggestions** - Provides helpful alternatives when domains fail
 
-## 🐳 Docker & AWS Fargate Support (New in v0.3!)
+## 🐳 Docker/Rancher Deployment (v2.0 Production Ready!)
 
 Run Pixel Detector at scale with Docker containers:
 
@@ -141,8 +141,8 @@ Run Pixel Detector at scale with Docker containers:
 - **Batch processing**: Handle thousands of domains efficiently
 
 **Get Started**: 
-- Local: [Docker VSCode Guide](LOCAL_DOCKER_VSCODE_GUIDE.md)
-- AWS: [Fargate Deployment Guide](FARGATE_DEPLOYMENT.md)
+- Local: [Docker VSCode Guide](docs/LOCAL_DEVELOPMENT.md)
+- AWS: [Fargate Deployment Guide](docs/archive/FARGATE_DEPLOYMENT.md)
 
 **Note**: Lambda is not recommended due to Playwright compatibility issues. Fargate provides better performance and reliability for batch scanning.
 
@@ -333,9 +333,9 @@ export PIXEL_DETECTOR_USER_AGENT="Custom Bot 1.0"
 - Testing: 91% code coverage achieved
 
 ### 🚧 In Progress  
-- Cloud deployment - ✅ Docker & Fargate support in v0.3! See [Fargate Guide](FARGATE_DEPLOYMENT.md)
+- Cloud deployment - ✅ Docker/Rancher/Kubernetes ready! See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md)
 - REST API development - ✅ FastAPI wrapper available with Docker
-- Web dashboard - Coming in v0.4
+- Web dashboard - Coming in future release
 
 ### 📅 Planned
 - Real-time monitoring service
