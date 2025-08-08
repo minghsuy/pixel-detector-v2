@@ -15,6 +15,9 @@ docker build -t pixel-scanner .
 
 # For corporate environments with proxy/SSL inspection
 ./build-with-proxy.sh
+
+# For AWS Fargate deployment with S3 support
+docker build -f Dockerfile.production -t pixel-scanner:fargate .
 ```
 
 ### Integration Examples
@@ -53,6 +56,23 @@ docker run --rm pixel-scanner scan google.com
 # Docker: Batch scan
 docker run --rm -v $(pwd):/work pixel-scanner batch /work/portfolio.csv -o /work/results
 ```
+
+## ☁️ Cloud Deployment (AWS Fargate / S3)
+
+**NEW:** Deploy to AWS Fargate for serverless batch processing with S3 integration.
+
+```bash
+# Run with S3 input/output
+docker run --rm \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+  pixel-scanner:fargate \
+  --input-file s3://my-bucket/input/portfolio.csv \
+  --output-dir s3://my-bucket/results/ \
+  --concurrency 10
+```
+
+See [Docker Deployment Guide](DOCKER_DEPLOYMENT.md#aws-fargate--s3-deployment) for complete Fargate setup.
 
 ## 📊 What It Detects
 

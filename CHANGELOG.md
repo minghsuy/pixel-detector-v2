@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-08-08
+
+### Added
+- **AWS Fargate / S3 Support**: New batch processing capabilities for cloud deployment
+  - Read input CSV files directly from S3 buckets
+  - Write results back to S3 buckets
+  - Support for AWS Fargate task execution
+  - New `run_batch.py` module for S3 integration
+- **Production Dockerfile**: Specialized `Dockerfile.production` for Fargate deployment
+  - Optimized for batch processing workloads
+  - Configured with S3 support via boto3
+  - Health check endpoint for container orchestration
+- **Enhanced Documentation**: Comprehensive AWS deployment guide
+  - Fargate task definition examples
+  - IAM permission requirements
+  - ECR push instructions
+
+### Fixed
+- **Security Improvements**: Replaced hardcoded `/tmp` paths with `tempfile.mkdtemp()`
+- **Type Safety**: Added complete type annotations to batch processing modules
+- **CI/CD**: Fixed all linting and type checking errors
+
 ## [2.0.0] - 2025-08-07
 
 ### Fixed (2025-08-07 Update)
