@@ -2,11 +2,12 @@ import argparse
 import asyncio
 import csv
 import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
-import boto3
-from botocore.exceptions import NoCredentialsError
+import boto3  # type: ignore
+from botocore.exceptions import NoCredentialsError  # type: ignore
 
 from .batch_processor import BatchProcessor
 from .logging_config import get_logger
@@ -14,7 +15,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def parse_s3_path(s3_path):
+def parse_s3_path(s3_path: str) -> tuple[str, str]:
     """Parses an S3 path into bucket and key."""
     if not s3_path.startswith("s3://"):
         raise ValueError("Invalid S3 path format")
@@ -24,13 +25,13 @@ def parse_s3_path(s3_path):
     return bucket, key
 
 
-def upload_directory_to_s3(local_path, s3_bucket, s3_prefix):
+def upload_directory_to_s3(local_path: str, s3_bucket: str, s3_prefix: str) -> None:
     """Uploads a directory's contents to an S3 prefix."""
     s3 = boto3.client("s3")
-    local_path = Path(local_path)
-    for file_path in local_path.rglob("*"):
+    local_path_obj = Path(local_path)
+    for file_path in local_path_obj.rglob("*"):
         if file_path.is_file():
-            s3_key = f"{s3_prefix}/{file_path.relative_to(local_path)}"
+            s3_key = f"{s3_prefix}/{file_path.relative_to(local_path_obj)}"
             try:
                 s3.upload_file(str(file_path), s3_bucket, s3_key)
                 logger.info(f"Uploaded {file_path} to s3://{s3_bucket}/{s3_key}")
@@ -41,7 +42,7 @@ def upload_directory_to_s3(local_path, s3_bucket, s3_prefix):
                 logger.error(f"Failed to upload {file_path} to S3: {e}")
 
 
-def main():
+def main() -> None:
     """
     Main function to run the batch processing of URLs from a CSV file.
     Supports both local and S3 paths for input and output.
@@ -88,9 +89,9 @@ def main():
             s3 = boto3.client("s3")
             bucket, key = parse_s3_path(args.input_file)
             file_name = Path(key).name
-            # Using /tmp for downloaded files in container environments
-            os.makedirs("/tmp/input", exist_ok=True)
-            local_input_file = f"/tmp/input/{file_name}"
+            # Using temp directory for downloaded files in container environments
+            temp_dir = tempfile.mkdtemp(prefix="pixel_detector_input_")
+            local_input_file = os.path.join(temp_dir, file_name)
             s3.download_file(bucket, key, local_input_file)
             logger.info(f"Successfully downloaded to {local_input_file}")
         except NoCredentialsError:
@@ -101,17 +102,21 @@ def main():
             return
 
     # Use a local directory for processing, even for S3 output
-    local_output_dir = f"/tmp/results/{args.batch_id}" if is_s3_output else args.output_dir
+    if is_s3_output:
+        temp_dir = tempfile.mkdtemp(prefix="pixel_detector_results_")
+        local_output_dir = os.path.join(temp_dir, args.batch_id)
+    else:
+        local_output_dir = args.output_dir
     Path(local_output_dir).mkdir(parents=True, exist_ok=True)
 
     # Read domains from CSV
     try:
-        with open(local_input_file, 'r', encoding='utf-8') as f:
+        with open(local_input_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
-            if 'url' not in reader.fieldnames:
+            if not reader.fieldnames or "url" not in reader.fieldnames:
                 logger.error(f"Input CSV file '{local_input_file}' must have a 'url' column.")
                 return
-            domains = [row['url'] for row in reader]
+            domains = [row["url"] for row in reader]
     except FileNotFoundError:
         logger.error(f"Input file not found: {local_input_file}")
         return
