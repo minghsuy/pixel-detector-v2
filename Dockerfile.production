@@ -29,7 +29,8 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libxrandr2 \
     xdg-utils \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates
 
 # Set working directory
 WORKDIR /app
@@ -37,7 +38,6 @@ WORKDIR /app
 # Copy project files
 COPY pyproject.toml poetry.lock ./
 COPY src/ ./src/
-COPY monitor_progress.py analyze_scan_results.py run_production_scan.sh ./
 
 # Install Python dependencies
 RUN pip install poetry==1.8.5 && \
@@ -58,8 +58,5 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/app/browsers
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# Default entrypoint for production scanning
-ENTRYPOINT ["python", "/app/src/pixel_detector/production_batch_scanner.py"]
-
-# Default command shows usage
+ENTRYPOINT ["poetry", "run", "python", "-m", "pixel_detector.run_batch"]
 CMD ["--help"]
