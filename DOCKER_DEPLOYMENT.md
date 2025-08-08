@@ -215,6 +215,94 @@ spec:
 - ✅ **Smart retries**: Tries www/non-www, http/https variations
 - ✅ **Checkpoint/resume**: Saves progress every 10 domains
 
+## AWS Fargate / S3 Deployment
+
+### Building for Fargate
+```bash
+# Build the production image with S3 support
+docker build -f Dockerfile.production -t pixel-scanner:fargate .
+
+# Tag for ECR
+docker tag pixel-scanner:fargate <your-ecr-uri>/pixel-scanner:latest
+
+# Push to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-ecr-uri>
+docker push <your-ecr-uri>/pixel-scanner:latest
+```
+
+### Running with S3 Input/Output
+```bash
+# Local testing with S3
+docker run --rm \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+  -e AWS_DEFAULT_REGION=us-east-1 \
+  pixel-scanner:fargate \
+  --input-file s3://my-bucket/input/portfolio.csv \
+  --output-dir s3://my-bucket/results/ \
+  --concurrency 5 \
+  --batch-id batch_$(date +%Y%m%d_%H%M%S)
+```
+
+### Fargate Task Definition
+```json
+{
+  "family": "pixel-detector-batch",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "cpu": "4096",
+  "memory": "16384",
+  "containerDefinitions": [
+    {
+      "name": "pixel-detector",
+      "image": "<your-ecr-uri>/pixel-scanner:latest",
+      "command": [
+        "--input-file", "s3://my-bucket/input/portfolio.csv",
+        "--output-dir", "s3://my-bucket/results/",
+        "--concurrency", "10"
+      ],
+      "environment": [
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/pixel-detector",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "batch"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Required IAM Permissions
+The task role needs S3 read/write permissions:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::my-bucket/*",
+        "arn:aws:s3:::my-bucket"
+      ]
+    }
+  ]
+}
+```
+
 ## Performance Tuning
 
 ### For Large Portfolios (1000+ domains)
