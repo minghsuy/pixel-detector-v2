@@ -1,15 +1,21 @@
 """Tests for the CLI module."""
 
 import json
-from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch, mock_open
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from typer.testing import CliRunner
 
 from pixel_detector.cli import app, version_callback
-from pixel_detector.models.pixel_detection import PixelDetection, PixelType, ScanResult, ScanMetadata, PixelEvidence, RiskLevel
+from pixel_detector.models.pixel_detection import (
+    PixelDetection,
+    PixelEvidence,
+    PixelType,
+    RiskLevel,
+    ScanMetadata,
+    ScanResult,
+)
 
 
 @pytest.fixture
@@ -66,14 +72,14 @@ class TestCLI:
         """Test --version flag."""
         result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0
-        assert "0.3.0" in result.stdout
+        assert "2.3.0" in result.stdout
 
     def test_help_command(self, runner):
         """Test --help flag."""
         # Skip this test due to Typer argument handling issues
         pytest.skip("Typer argument handling issue with make_metavar")
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_basic(self, mock_scanner_class, runner, mock_scan_result):
         """Test basic scan command."""
         # Mock the scanner
@@ -89,7 +95,7 @@ class TestCLI:
         assert "high" in result.stdout
         assert "Yes" in result.stdout  # HIPAA concern
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_no_pixels(self, mock_scanner_class, runner):
         """Test scan command with no pixels detected."""
         # Create a clean scan result
@@ -118,7 +124,7 @@ class TestCLI:
         assert "Scan Results for clean.com" in result.stdout
         # Log messages are not captured in stdout anymore
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_with_output(self, mock_scanner_class, runner, mock_scan_result, tmp_path):
         """Test scan command with output file."""
         mock_scanner = AsyncMock()
@@ -137,34 +143,35 @@ class TestCLI:
             assert data["domain"] == "example.com"
             assert len(data["pixels_detected"]) == 1
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_headful(self, mock_scanner_class, runner, mock_scan_result):
         """Test scan command with --no-headless flag."""
         mock_scanner = AsyncMock()
         mock_scanner.scan_domain.return_value = mock_scan_result
         mock_scanner_class.return_value = mock_scanner
-        
+
         result = runner.invoke(app, ["scan", "example.com", "--no-headless"])
-        
+
         assert result.exit_code == 0
         # Verify scanner was created with headless=False
         mock_scanner_class.assert_called_once_with(
-            headless=False, 
+            headless=False,
             stealth_mode=True,
             screenshot=False,
             timeout=30000,
-            max_retries=3
+            max_retries=3,
+            test_consent=False
         )
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_with_timeout(self, mock_scanner_class, runner, mock_scan_result):
         """Test scan command with custom timeout."""
         mock_scanner = AsyncMock()
         mock_scanner.scan_domain.return_value = mock_scan_result
         mock_scanner_class.return_value = mock_scanner
-        
+
         result = runner.invoke(app, ["scan", "example.com", "--timeout", "60000"])
-        
+
         assert result.exit_code == 0
         # Verify scanner was created with custom timeout
         mock_scanner_class.assert_called_once_with(
@@ -172,10 +179,11 @@ class TestCLI:
             stealth_mode=True,
             screenshot=False,
             timeout=60000,
-            max_retries=3
+            max_retries=3,
+            test_consent=False
         )
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_error(self, mock_scanner_class, runner):
         """Test scan command with error."""
         # Create error result
@@ -203,7 +211,7 @@ class TestCLI:
         assert result.exit_code == 0  # CLI doesn't fail on scan errors
         assert "Scan Results for error.com" in result.stdout
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_batch_command_basic(self, mock_scanner_class, runner, mock_scan_result):
         """Test batch scan command."""
         # Use runner's isolated filesystem
@@ -235,7 +243,7 @@ class TestCLI:
         assert result.exit_code == 1
         # Error logs are not captured in stdout anymore
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_batch_command_with_output_dir(self, mock_scanner_class, runner, mock_scan_result):
         """Test batch command with output directory."""
         # Use runner's isolated filesystem
@@ -287,7 +295,7 @@ class TestCLI:
     def test_main_function(self, runner):
         """Test main function entry point."""
         from pixel_detector.cli import main
-        with patch('typer.main.get_command') as mock_get_command:
+        with patch("typer.main.get_command") as mock_get_command:
             # Mock the app's command
             mock_command = Mock()
             mock_get_command.return_value = mock_command
@@ -295,7 +303,7 @@ class TestCLI:
             # Import and check main exists
             assert callable(main)
 
-    @patch('pixel_detector.cli.PixelScanner')
+    @patch("pixel_detector.cli.PixelScanner")
     def test_scan_command_multiple_pixels(self, mock_scanner_class, runner):
         """Test scan command with multiple pixels detected."""
         # Create result with multiple pixels

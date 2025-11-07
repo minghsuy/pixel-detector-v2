@@ -46,6 +46,9 @@ uv run playwright install chromium
 # Single domain scan
 pixel-detector scan healthcare-site.com
 
+# Test if consent banners actually work (NEW!)
+pixel-detector scan healthcare-site.com --test-consent
+
 # With screenshot evidence
 pixel-detector scan healthcare-site.com --screenshot
 
@@ -92,9 +95,9 @@ See [Docker Deployment Guide](DOCKER_DEPLOYMENT.md#aws-fargate--s3-deployment) f
 | **Pinterest Tag** | 🟡 **High** | Shopping behavior tracking | 98% |
 | **Snapchat Pixel** | 🟡 **High** | Demographic targeting risks | 98% |
 
-### 🛡️ Consent Management Platforms (NEW!)
+### 🛡️ Consent Management Platforms & Testing (NEW!)
 
-We now detect 6 major consent management platforms to help you evaluate GDPR/CCPA compliance:
+We detect 6 major consent management platforms AND test if they actually work:
 
 | Platform | Market Share | Detection Rate | Risk Level |
 |----------|--------------|----------------|------------|
@@ -105,9 +108,39 @@ We now detect 6 major consent management platforms to help you evaluate GDPR/CCP
 | **Usercentrics** | 5% | 98% | 🟢 Low (Compliance Tool) |
 | **Termly** | 3% | 98% | 🟢 Low (Compliance Tool) |
 
-**Why This Matters:** Sites with tracking pixels but NO consent management platform represent a critical GDPR/CCPA compliance gap. Conversely, detecting a consent platform indicates the organization is taking privacy seriously.
+**Why Detection Alone Isn't Enough:** Many sites have consent banners installed but they're malfunctioning - tracking still fires before consent or after rejection. This is the compliance GAP that gets companies fined.
 
-**Future Phase:** We're planning banner interaction testing to verify that "Reject All" actually blocks trackers (many don't!).
+#### 🎯 Consent Banner Interaction Testing (Phase 2 - NOW AVAILABLE!)
+
+Use `--test-consent` flag to automatically test if consent platforms actually work:
+
+```bash
+# Test consent banner functionality
+pixel-detector scan healthcare-site.com --test-consent
+```
+
+**What It Tests:**
+1. **Baseline Test (Dark Patterns)**: Does tracking fire BEFORE you click anything?
+   - ✅ Compliant: No tracking before consent
+   - ❌ Violation: Pixels firing before user interaction
+
+2. **Reject All Test (GDPR/CCPA Critical)**: Does "Reject All" actually block trackers?
+   - ✅ Compliant: All tracking stops after rejection
+   - ❌ Violation: Tracking continues despite rejection
+
+3. **Accept All Test (Validation)**: Does tracking work after consent?
+   - ✅ Validates our detection is working correctly
+
+**Real Results:**
+- **goodsamsanjose.com**: Has Cookiebot, but Google Analytics fires BEFORE consent (Score: 33/100)
+- **elcaminohealth.org**: Has TrustArc, no pre-consent tracking detected (Score: 33/100, banner issues)
+
+**Output Includes:**
+- Overall compliance score (0-100)
+- Detailed violation list with severity
+- Platform-specific recommendations
+- Timeline of when each tracker fired
+- Recommended action (APPROVE/REVIEW/DECLINE)
 
 ## 🖼️ Sample Output
 
@@ -171,10 +204,12 @@ We now detect 6 major consent management platforms to help you evaluate GDPR/CCP
 
 ### Detection Capabilities
 - **8 Major Tracking Pixels** - All major advertising platforms covered
+- **6 Consent Platforms** - OneTrust, Cookiebot, Osano, TrustArc, Usercentrics, Termly
+- **Consent Banner Testing** - Automated interaction testing to verify compliance (NEW!)
 - **5 Detection Methods** - Network, DOM, JavaScript, cookies, and fingerprinting
 - **99%+ Accuracy** - Virtually no false positives or negatives
 - **Stealth Mode** - Avoids bot detection with playwright-stealth
-- **Evidence Collection** - Screenshots, network logs, and technical details
+- **Evidence Collection** - Screenshots, network logs, timeline events, and technical details
 
 ### Performance & Reliability
 - **10-second scans** - Fast enough for real-time assessments
@@ -418,22 +453,25 @@ export PIXEL_DETECTOR_USER_AGENT="Custom Bot 1.0"
 ## 🗺️ Roadmap
 
 ### ✅ Completed
-- Phase 1: Core detection engine
-- Phase 2: Enhanced detection methods
+- Phase 1: Core detection engine (8 tracking pixels)
+- Phase 1.5: Consent platform detection (6 CMPs)
+- Phase 2: Banner interaction testing ✨ **NEW!**
 - Phase 3: Performance optimization (5x faster)
 - Testing: 91% code coverage achieved
+- Cloud deployment: Docker/Kubernetes ready
 
-### 🚧 In Progress  
-- Cloud deployment - ✅ Docker/Kubernetes ready! See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md)
+### 🚧 In Progress
 - REST API development - FastAPI wrapper available
-- Web dashboard - Coming in future release
+- Batch consent testing for portfolio analysis
+- Enhanced reporting and dashboards
 
 ### 📅 Planned
 - Real-time monitoring service
 - Historical tracking database
-- Compliance report generation
+- Automated compliance report generation
 - Email alerts for violations
 - Integration with GRC platforms
+- Browser extension for manual testing
 
 ## 📚 Documentation
 

@@ -11,9 +11,11 @@ from playwright.async_api import Page
 from ..detectors.base import BasePixelDetector
 from ..models.consent_test import (
     ConsentAction,
+    ConsentCompliance,
     ConsentTestEvidence,
     ConsentTestResult,
     TimelineEvent,
+    ViolationSeverity,
 )
 from .button_selectors import BannerSelector
 from .compliance_checker import ComplianceChecker
@@ -74,7 +76,7 @@ class BannerInteractionTester:
         """
         # This would need to check cookies from detectors
         # For now, simplified implementation
-        cookies = []
+        cookies: list[str] = []
         for detector in self.detectors:
             if hasattr(detector, "cookies_found") and detector.cookies_found:
                 cookies.extend(detector.cookies_found)
@@ -173,8 +175,8 @@ class BannerInteractionTester:
 
             return ConsentTestResult(
                 test_type=ConsentAction.BASELINE,
-                compliance_status="inconclusive",
-                violation_severity="medium",
+                compliance_status=ConsentCompliance.INCONCLUSIVE,
+                violation_severity=ViolationSeverity.MEDIUM,
                 evidence=error_evidence,
                 compliance_score=50,
                 violations_detected=[f"Test error: {str(e)}"],
@@ -209,8 +211,8 @@ class BannerInteractionTester:
 
                 return ConsentTestResult(
                     test_type=ConsentAction.REJECT_ALL,
-                    compliance_status="missing",
-                    violation_severity="high",
+                    compliance_status=ConsentCompliance.MISSING,
+                    violation_severity=ViolationSeverity.HIGH,
                     evidence=error_evidence,
                     compliance_score=0,
                     violations_detected=["No consent banner detected"],
@@ -218,6 +220,9 @@ class BannerInteractionTester:
                 )
 
             self._record_event("banner_detected", f"Consent banner detected: {platform}")
+
+            # Type guard: platform must be str if banner was found
+            assert platform is not None, "Platform should not be None when banner is found"
 
             # Capture state before interaction
             pixels_before = self._get_detected_pixels()
@@ -243,13 +248,16 @@ class BannerInteractionTester:
 
                 return ConsentTestResult(
                     test_type=ConsentAction.REJECT_ALL,
-                    compliance_status="inconclusive",
-                    violation_severity="medium",
+                    compliance_status=ConsentCompliance.INCONCLUSIVE,
+                    violation_severity=ViolationSeverity.MEDIUM,
                     evidence=error_evidence,
                     compliance_score=50,
                     violations_detected=[f"Could not find reject button for {platform}"],
                     recommendation="Manual testing required - button selectors may need updating",
                 )
+
+            # Type guard: selector must be str if button was found
+            assert selector is not None, "Selector should not be None when button is found"
 
             # Click the button
             click_success = await self.selector.click_button_with_retry(selector)
@@ -271,8 +279,8 @@ class BannerInteractionTester:
 
                 return ConsentTestResult(
                     test_type=ConsentAction.REJECT_ALL,
-                    compliance_status="inconclusive",
-                    violation_severity="medium",
+                    compliance_status=ConsentCompliance.INCONCLUSIVE,
+                    violation_severity=ViolationSeverity.MEDIUM,
                     evidence=error_evidence,
                     compliance_score=50,
                     violations_detected=["Button click failed"],
@@ -341,8 +349,8 @@ class BannerInteractionTester:
 
             return ConsentTestResult(
                 test_type=ConsentAction.REJECT_ALL,
-                compliance_status="inconclusive",
-                violation_severity="medium",
+                compliance_status=ConsentCompliance.INCONCLUSIVE,
+                violation_severity=ViolationSeverity.MEDIUM,
                 evidence=error_evidence,
                 compliance_score=50,
                 violations_detected=[f"Test error: {str(e)}"],
@@ -378,8 +386,8 @@ class BannerInteractionTester:
 
                 return ConsentTestResult(
                     test_type=ConsentAction.ACCEPT_ALL,
-                    compliance_status="inconclusive",
-                    violation_severity="none",
+                    compliance_status=ConsentCompliance.INCONCLUSIVE,
+                    violation_severity=ViolationSeverity.NONE,
                     evidence=evidence,
                     compliance_score=100,  # Not a violation
                     violations_detected=[],
@@ -388,11 +396,15 @@ class BannerInteractionTester:
 
             self._record_event("banner_detected", f"Consent banner detected: {platform}")
 
+            # Type guard: platform must be str if banner was found
+            assert platform is not None, "Platform should not be None when banner is found"
+
             # Find and click accept button
             button_found, selector = await self.selector.find_button(platform, "accept_all")
 
             if button_found:
-                click_success = await self.selector.click_button_with_retry(selector)
+                assert selector is not None, "Selector should not be None when button is found"
+                await self.selector.click_button_with_retry(selector)
                 self._record_event("button_clicked", f"Clicked accept button: {selector}")
 
                 # Wait for acceptance to take effect
@@ -419,8 +431,8 @@ class BannerInteractionTester:
             # Accept test is always compliant (validates detection)
             return ConsentTestResult(
                 test_type=ConsentAction.ACCEPT_ALL,
-                compliance_status="compliant",
-                violation_severity="none",
+                compliance_status=ConsentCompliance.COMPLIANT,
+                violation_severity=ViolationSeverity.NONE,
                 evidence=evidence,
                 compliance_score=100,
                 violations_detected=[],
@@ -441,8 +453,8 @@ class BannerInteractionTester:
 
             return ConsentTestResult(
                 test_type=ConsentAction.ACCEPT_ALL,
-                compliance_status="inconclusive",
-                violation_severity="none",
+                compliance_status=ConsentCompliance.INCONCLUSIVE,
+                violation_severity=ViolationSeverity.NONE,
                 evidence=error_evidence,
                 compliance_score=100,  # Accept test failure is not a violation
                 violations_detected=[],

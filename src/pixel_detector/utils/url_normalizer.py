@@ -1,7 +1,6 @@
 """URL normalization and validation utilities for handling various domain formats."""
 
 import re
-from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
 import httpx
@@ -112,7 +111,7 @@ class URLNormalizer:
         
         return url
     
-    async def find_accessible_url(self, domain: str, max_attempts: int = 4) -> Optional[str]:
+    async def find_accessible_url(self, domain: str, max_attempts: int = 4) -> str | None:
         """
         Try to find the most accessible version of a domain.
         

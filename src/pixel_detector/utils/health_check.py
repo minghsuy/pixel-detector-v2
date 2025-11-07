@@ -1,7 +1,6 @@
 """Website health check utilities for pre-flight validation."""
 
 import asyncio
-from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -19,12 +18,12 @@ class HealthCheckResult:
         self,
         url: str,
         is_alive: bool,
-        status_code: Optional[int] = None,
-        error: Optional[str] = None,
+        status_code: int | None = None,
+        error: str | None = None,
         dns_resolves: bool = False,
         http_accessible: bool = False,
         has_bot_protection: bool = False,
-        redirect_url: Optional[str] = None,
+        redirect_url: str | None = None,
         response_time: float = 0.0,
     ):
         self.url = url
@@ -55,7 +54,7 @@ class WebsiteHealthChecker:
         self.timeout = timeout
         self.logger = get_logger(__name__)
         
-    async def check_dns(self, domain: str) -> tuple[bool, Optional[str]]:
+    async def check_dns(self, domain: str) -> tuple[bool, str | None]:
         """Check if domain resolves via DNS."""
         try:
             # Run DNS resolution in thread pool to avoid blocking
@@ -77,7 +76,7 @@ class WebsiteHealthChecker:
         except Exception as e:
             return False, f"DNS error: {str(e)}"
     
-    async def check_http(self, url: str) -> tuple[bool, Optional[int], Optional[str], float]:
+    async def check_http(self, url: str) -> tuple[bool, int | None, str | None, float]:
         """Check if website responds to HTTP requests."""
         start_time = asyncio.get_event_loop().time()
         
@@ -107,7 +106,7 @@ class WebsiteHealthChecker:
             except Exception as e:
                 return False, None, str(e), 0.0
     
-    def detect_bot_protection(self, status_code: Optional[int], error: Optional[str]) -> bool:
+    def detect_bot_protection(self, status_code: int | None, error: str | None) -> bool:
         """Detect common bot protection patterns."""
         if not status_code and not error:
             return False

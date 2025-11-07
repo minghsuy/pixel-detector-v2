@@ -1,15 +1,14 @@
 """Shared test fixtures and configuration for pixel-detector tests."""
 
 import asyncio
-from datetime import datetime
-from pathlib import Path
-from typing import Any, AsyncGenerator, Generator
+from collections.abc import AsyncGenerator
+from typing import Any
 from unittest.mock import AsyncMock, Mock, create_autospec
 
 import pytest
 from playwright.async_api import Browser, BrowserContext, Page, Request, Response
 
-from pixel_detector.models.pixel_detection import PixelEvidence, PixelType
+from pixel_detector.models.pixel_detection import PixelEvidence
 from pixel_detector.scanner import PixelScanner
 
 
@@ -376,7 +375,7 @@ async def mock_scanner(mock_browser: AsyncMock, mock_browser_context: AsyncMock,
     scanner._launch_browser = AsyncMock(return_value=mock_browser)  # type: ignore
     scanner._create_context = AsyncMock(return_value=mock_browser_context)  # type: ignore
     
-    yield scanner
+    return scanner
     
     # Cleanup not needed as we're using mocks
 

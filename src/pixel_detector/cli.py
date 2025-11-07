@@ -1,7 +1,6 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -33,7 +32,7 @@ def version_callback(value: bool) -> None:
 @app.command()
 def scan(
     domain: str = typer.Argument(..., help="Domain to scan (e.g., example.com)"),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None, "--output", "-o", help="Output file path for JSON results"
     ),
     screenshot: bool = typer.Option(
@@ -108,7 +107,12 @@ def scan(
             console.print("\n[bold cyan]===  Consent Compliance Testing ===[/bold cyan]\n")
 
             summary = result.consent_compliance_summary
-            score_color = "green" if summary.overall_score >= 90 else ("yellow" if summary.overall_score >= 70 else "red")
+            if summary.overall_score >= 90:
+                score_color = "green"
+            elif summary.overall_score >= 70:
+                score_color = "yellow"
+            else:
+                score_color = "red"
 
             console.print(f"[{score_color}]Overall Compliance Score: {summary.overall_score}/100[/{score_color}]")
             console.print(f"Status: [bold]{summary.overall_status.value.upper()}[/bold]")
@@ -118,8 +122,18 @@ def scan(
 
             if result.consent_test_results:
                 for test_result in result.consent_test_results:
-                    test_emoji = "🔴" if test_result.compliance_status == "malfunctioning" else ("🟡" if test_result.compliance_status == "inconclusive" else "✅")
-                    console.print(f"\n{test_emoji} [bold]{test_result.test_type.value.upper()} TEST:[/bold] {test_result.compliance_status.value}")
+                    # Choose emoji based on compliance status
+                    if test_result.compliance_status == "malfunctioning":
+                        test_emoji = "🔴"
+                    elif test_result.compliance_status == "inconclusive":
+                        test_emoji = "🟡"
+                    else:
+                        test_emoji = "✅"
+
+                    console.print(
+                        f"\n{test_emoji} [bold]{test_result.test_type.value.upper()} TEST:[/bold] "
+                        f"{test_result.compliance_status.value}"
+                    )
                     console.print(f"   Score: {test_result.compliance_score}/100")
 
                     if test_result.violations_detected:

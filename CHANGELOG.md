@@ -5,6 +5,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-11-07
+
+### Added
+- **Consent Banner Interaction Testing (Phase 2)**: Automated testing to verify consent platforms actually work
+  - **Baseline Test**: Detects dark patterns where tracking fires before user consent
+  - **Reject All Test**: Verifies that clicking "Reject All" actually blocks tracking (GDPR/CCPA compliance)
+  - **Accept All Test**: Validates that tracking works correctly after consent given
+  - Timeline tracking with sub-second precision to detect exactly when trackers fire
+  - Comprehensive compliance scoring (0-100) with actionable recommendations
+- **Button Selector Module**: Smart detection of consent buttons across 6 major platforms
+  - OneTrust: 8 button selectors with retry logic
+  - Cookiebot: 6 button selectors with fallback patterns
+  - Osano: 6 button selectors for modern implementations
+  - TrustArc: 8 selectors including legacy and modern patterns
+  - Usercentrics: 7 selectors with European variations
+  - Termly: 6 selectors for SMB-focused implementations
+  - Intelligent banner detection with platform-specific container selectors
+  - Multi-retry clicking with scroll-into-view and force-click fallbacks
+- **Compliance Checker**: Sophisticated violation detection and scoring
+  - Detects pre-consent tracking (critical violation)
+  - Identifies post-rejection tracking (GDPR/CCPA violation)
+  - Generates actionable recommendations based on violation patterns
+  - Risk severity classification (CRITICAL, HIGH, MEDIUM, LOW, NONE)
+  - Platform-specific remediation guidance
+- **Enhanced Data Models**: New Pydantic models for consent testing
+  - `ConsentTestResult`: Complete test results with evidence and scores
+  - `ConsentTestEvidence`: Detailed evidence collection (pixels, cookies, requests, timeline)
+  - `ConsentComplianceSummary`: Overall compliance assessment across all tests
+  - `TimelineEvent`: Sub-second event tracking for dark pattern detection
+  - Enums: `ConsentAction`, `ConsentCompliance`, `ViolationSeverity`
+- **CLI Integration**: New `--test-consent` flag for consent testing
+  - Rich console output with color-coded compliance scores
+  - Emoji indicators for test results (✅/🔴/🟡)
+  - Detailed violation reporting with recommendations
+  - Overall compliance score and recommended action (APPROVE/REVIEW/DECLINE)
+
+### Changed
+- **ScanResult Model**: Extended to include optional consent test results
+  - Added `consent_test_results` field for all 3 test results
+  - Added `consent_compliance_summary` field for overall assessment
+  - Model rebuild required for forward reference resolution
+- **Scanner Architecture**: Integrated consent testing into main scan workflow
+  - Creates fresh browser pages for each test to avoid state contamination
+  - Resets detectors between tests for accurate tracking detection
+  - Runs all 3 tests sequentially (baseline, reject, accept)
+  - Graceful error handling - scan completes even if consent tests fail
+- **CLI Output**: Enhanced to display rich consent testing results
+  - Color-coded compliance scores (green ≥90, yellow ≥70, red <70)
+  - Platform detection displayed prominently
+  - Violations listed with specific details
+  - Recommendations highlighted for quick action
+
+### Fixed
+- **Pydantic Forward References**: Proper import ordering to resolve circular dependencies
+  - Import `pixel_detection` models first, then `consent_test` models
+  - Call `ScanResult.model_rebuild()` after all imports
+  - Use `Optional["Type"]` instead of `"Type" | None` for forward references
+
+### Technical Details
+- **3-Phase Testing Approach**:
+  1. **Baseline (No Interaction)**: Loads page, waits 5s, detects any tracking before consent
+  2. **Reject All**: Finds and clicks reject button, verifies tracking stops
+  3. **Accept All**: Clicks accept button, validates tracking works (confirms detection accuracy)
+- **Evidence Collection**: Captures pixel types, cookies, network requests, and timeline events
+- **Compliance Scoring Algorithm**:
+  - Baseline: 0 if tracking before consent, 100 if clean
+  - Reject: 0 if banner missing, 0 if tracking continues, 100 if properly blocks
+  - Accept: Always 100 (validates our detection works)
+  - Overall: Average of all test scores
+- **Real-World Validation**: Tested on goodsamsanjose.com and elcaminohealth.org
+  - Successfully detected Cookiebot dark pattern (Google Analytics before consent)
+  - Validated TrustArc detection (no pre-consent tracking)
+
+### Documentation
+- Enhanced CLI help with consent testing examples
+- Rich console output for compliance reporting
+- Timeline events provide audit trail for compliance verification
+
 ## [2.2.0] - 2025-11-07
 
 ### Added

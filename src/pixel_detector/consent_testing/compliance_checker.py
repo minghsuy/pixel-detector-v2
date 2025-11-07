@@ -8,6 +8,7 @@ from ..models.consent_test import (
     ConsentAction,
     ConsentCompliance,
     ConsentComplianceSummary,
+    ConsentTestEvidence,
     ConsentTestResult,
     ViolationSeverity,
 )
@@ -134,7 +135,7 @@ class ComplianceChecker:
         return " | ".join(recommendations)
 
     def calculate_test_score(
-        self, evidence, action: ConsentAction
+        self, evidence: ConsentTestEvidence, action: ConsentAction
     ) -> tuple[int, ConsentCompliance, ViolationSeverity]:
         """Calculate score for a single test.
 

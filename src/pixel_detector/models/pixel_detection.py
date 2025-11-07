@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -78,7 +78,7 @@ class ScanResult(BaseModel):
     consent_test_results: list["ConsentTestResult"] | None = Field(
         default=None, description="Results from consent banner interaction tests"
     )
-    consent_compliance_summary: "ConsentComplianceSummary" | None = Field(
+    consent_compliance_summary: Optional["ConsentComplianceSummary"] = Field(
         default=None, description="Overall consent compliance summary"
     )
 

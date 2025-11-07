@@ -213,7 +213,7 @@ class BannerSelector:
                 # Wait a moment for any animations/confirmation
                 await self.page.wait_for_timeout(500)
                 return True
-            except Exception as e:
+            except Exception:
                 if attempt == max_attempts - 1:
                     # Last attempt failed
                     return False

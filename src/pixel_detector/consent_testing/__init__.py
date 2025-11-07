@@ -5,7 +5,7 @@ consent mechanisms (comparable to BitSight's consent management feature).
 """
 
 from .banner_interaction import BannerInteractionTester
-from .button_selectors import BannerSelector, ButtonConfig, PLATFORM_SELECTORS
+from .button_selectors import PLATFORM_SELECTORS, BannerSelector, ButtonConfig
 from .compliance_checker import ComplianceChecker
 
 __all__ = [

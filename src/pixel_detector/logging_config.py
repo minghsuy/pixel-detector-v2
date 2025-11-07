@@ -2,13 +2,12 @@
 
 import logging
 import sys
-from typing import Optional
 
 
 def setup_logging(
     level: str = "INFO",
-    format_string: Optional[str] = None,
-    log_file: Optional[str] = None,
+    format_string: str | None = None,
+    log_file: str | None = None,
 ) -> None:
     """
     Set up logging configuration for the application.

@@ -16,6 +16,9 @@ from .pixel_detection import (
     ScanResult,
 )
 
+# Rebuild ScanResult model after consent test models are imported
+ScanResult.model_rebuild()
+
 __all__ = [
     # Pixel detection models
     "PixelDetection",
