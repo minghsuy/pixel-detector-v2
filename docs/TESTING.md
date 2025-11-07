@@ -18,10 +18,10 @@ This guide covers the testing infrastructure, patterns, and best practices for t
 ### Prerequisites
 ```bash
 # Install development dependencies
-poetry install --with dev
+uv sync --with dev
 
 # Install Playwright browsers (for integration tests)
-poetry run playwright install chromium
+uv run playwright install chromium
 ```
 
 ### Key Testing Dependencies
@@ -35,22 +35,22 @@ poetry run playwright install chromium
 ### Basic Commands
 ```bash
 # Run all tests
-poetry run pytest
+uv run pytest
 
 # Run with verbose output
-poetry run pytest -v
+uv run pytest -v
 
 # Run with coverage report
-poetry run pytest --cov=src --cov-report=term-missing
+uv run pytest --cov=src --cov-report=term-missing
 
 # Generate HTML coverage report
-poetry run pytest --cov=src --cov-report=html
+uv run pytest --cov=src --cov-report=html
 
 # Run specific test file
-poetry run pytest tests/test_cli.py
+uv run pytest tests/test_cli.py
 
 # Run specific test
-poetry run pytest tests/test_cli.py::TestCLI::test_scan_command_basic -v -s
+uv run pytest tests/test_cli.py::TestCLI::test_scan_command_basic -v -s
 ```
 
 ### Useful Pytest Options
@@ -261,14 +261,14 @@ Remaining areas for potential improvement:
 ### Coverage Commands
 ```bash
 # View coverage report
-poetry run pytest --cov=src --cov-report=term-missing
+uv run pytest --cov=src --cov-report=term-missing
 
 # Generate HTML report
-poetry run pytest --cov=src --cov-report=html
+uv run pytest --cov=src --cov-report=html
 # Open htmlcov/index.html in browser
 
 # Check specific module coverage
-poetry run pytest --cov=src.pixel_detector.scanner --cov-report=term
+uv run pytest --cov=src.pixel_detector.scanner --cov-report=term
 ```
 
 ## Best Practices
@@ -315,7 +315,7 @@ def test_scan_domain_with_meta_pixel_detection():
 
 ### 1. Run Single Test with Output
 ```bash
-poetry run pytest tests/test_cli.py::TestCLI::test_scan_command -v -s
+uv run pytest tests/test_cli.py::TestCLI::test_scan_command -v -s
 ```
 
 ### 2. Use pytest.set_trace()
@@ -341,7 +341,7 @@ print(mock_scanner.scan_domain.call_args_list)
 ### 4. Examine Coverage Gaps
 ```bash
 # Generate detailed HTML report
-poetry run pytest --cov=src --cov-report=html
+uv run pytest --cov=src --cov-report=html
 
 # Look for red lines in htmlcov/index.html
 ```

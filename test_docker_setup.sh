@@ -36,14 +36,14 @@ run_test() {
 
 echo "1. Testing Local CLI Installation"
 echo "=================================="
-run_test "CLI is installed" "which pixel-detector || poetry run which pixel-detector"
-run_test "CLI version check" "pixel-detector --version || poetry run pixel-detector --version"
-run_test "List detectors" "pixel-detector list-detectors || poetry run pixel-detector list-detectors"
+run_test "CLI is installed" "which pixel-detector || uv run which pixel-detector"
+run_test "CLI version check" "pixel-detector --version || uv run pixel-detector --version"
+run_test "List detectors" "pixel-detector list-detectors || uv run pixel-detector list-detectors"
 
 echo "2. Testing Single Domain Scanning"
 echo "=================================="
-run_test "Scan google.com (should find pixels)" "poetry run pixel-detector scan google.com | grep -E 'google_analytics|google_ads'"
-run_test "Scan mayo.edu (should be clean)" "poetry run pixel-detector scan mayo.edu | grep -E 'No tracking pixels|0 tracking'"
+run_test "Scan google.com (should find pixels)" "uv run pixel-detector scan google.com | grep -E 'google_analytics|google_ads'"
+run_test "Scan mayo.edu (should be clean)" "uv run pixel-detector scan mayo.edu | grep -E 'No tracking pixels|0 tracking'"
 
 echo "3. Testing Batch Processing"
 echo "==========================="
@@ -61,8 +61,8 @@ META,facebook.com
 MAYO,mayo.edu
 EOF
 
-run_test "Batch TXT file" "poetry run pixel-detector batch test_domains.txt -o test_output_txt --max-concurrent 2"
-run_test "Batch CSV file" "poetry run pixel-detector batch test_portfolio.csv -o test_output_csv --max-concurrent 2"
+run_test "Batch TXT file" "uv run pixel-detector batch test_domains.txt -o test_output_txt --max-concurrent 2"
+run_test "Batch CSV file" "uv run pixel-detector batch test_portfolio.csv -o test_output_csv --max-concurrent 2"
 run_test "CSV output exists" "test -f test_output_csv/scan_results.csv"
 run_test "CSV has correct columns" "head -1 test_output_csv/scan_results.csv | grep -q 'custom_id,url,domain,scan_status'"
 
@@ -144,6 +144,6 @@ else
     echo "Common fixes:"
     echo "1. For proxy issues: export HTTP_PROXY=http://your-proxy:port"
     echo "2. For Docker issues: ./build-with-proxy.sh"
-    echo "3. For CLI issues: poetry install && poetry run playwright install chromium"
+    echo "3. For CLI issues: uv sync && uv run playwright install chromium"
     exit 1
 fi

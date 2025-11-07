@@ -17,8 +17,8 @@ A system to detect pixel tracking usage on healthcare websites to identify poten
 ## Quick Start
 ```bash
 # Install and run
-poetry install
-poetry run playwright install chromium
+uv sync
+uv run playwright install chromium
 pixel-detector scan healthcare-site.com
 
 # Run the healthcare demo
@@ -27,7 +27,7 @@ pixel-detector batch santa_clara_healthcare.txt -o results/
 
 ## Project Setup
 - **Python Version**: 3.11.13
-- **Package Manager**: Poetry 2.1.3
+- **Package Manager**: uv
 - **Main Framework**: Playwright 1.53.0
 - **Stealth Package**: playwright-stealth 1.0.6
 
@@ -117,7 +117,7 @@ ignore = ["S101", "B008", "UP007"]  # S101: assert in tests, B008: typer default
 #### 5. Running CI Checks Locally
 ```bash
 # Run all checks together
-poetry run pytest tests/ && poetry run ruff check src/ && poetry run mypy src/
+uv run pytest tests/ && uv run ruff check src/ && uv run mypy src/
 ```
 
 ## Test-Driven Development Procedures
@@ -129,7 +129,7 @@ Follow this strict workflow to ensure code quality and prevent broken builds:
 #### 1. Before ANY Code Changes
 ```bash
 # Run all CI checks locally first
-poetry run pytest tests/ && poetry run ruff check src/ && poetry run mypy src/
+uv run pytest tests/ && uv run ruff check src/ && uv run mypy src/
 
 # If any check fails, fix it BEFORE making new changes
 ```
@@ -139,7 +139,7 @@ poetry run pytest tests/ && poetry run ruff check src/ && poetry run mypy src/
 2. **Run Tests to See Them Fail**: Verify tests fail for the right reason
 3. **Implement Minimal Code**: Write just enough code to make tests pass
 4. **Refactor**: Clean up code while keeping tests green
-5. **Run All Checks**: `poetry run pytest && poetry run ruff check src/ && poetry run mypy src/`
+5. **Run All Checks**: `uv run pytest && uv run ruff check src/ && uv run mypy src/`
 
 #### 3. Docker Testing Protocol
 ```bash
@@ -162,9 +162,9 @@ docker run --rm pixel-scanner:test scan facebook.com | grep "meta_pixel"
 
 #### 4. Comprehensive Testing Checklist
 Before EVERY push to remote:
-- [ ] All unit tests pass: `poetry run pytest tests/`
-- [ ] Linter has no errors: `poetry run ruff check src/`
-- [ ] Type checker passes: `poetry run mypy src/`
+- [ ] All unit tests pass: `uv run pytest tests/`
+- [ ] Linter has no errors: `uv run ruff check src/`
+- [ ] Type checker passes: `uv run mypy src/`
 - [ ] Docker build succeeds: `docker build -t test .`
 - [ ] Docker scan works: `docker run --rm test scan google.com`
 - [ ] Pixel detection verified for ALL 8 types (not just Google)
@@ -187,7 +187,7 @@ AMAZON,amazon.com
 EOF
 
 # Test with CLI
-poetry run pixel-detector batch test_all_pixels.csv -o test_results/
+uv run pixel-detector batch test_all_pixels.csv -o test_results/
 
 # Verify results contain expected pixels
 cat test_results/scan_results.csv
@@ -275,16 +275,16 @@ gh run list --limit 1 --status failure --json databaseId -q '.[0].databaseId' | 
 **Quick Fix Commands**:
 ```bash
 # Auto-fix most linting issues
-poetry run ruff check src/ --fix
+uv run ruff check src/ --fix
 
 # Check what can't be auto-fixed
-poetry run ruff check src/
+uv run ruff check src/
 
 # Check type errors
-poetry run mypy src/
+uv run mypy src/
 
 # Run all CI checks locally before pushing
-poetry run pytest && poetry run ruff check src/ && poetry run mypy src/
+uv run pytest && uv run ruff check src/ && uv run mypy src/
 ```
 
 ## Pixel Detection Patterns Reference
@@ -352,9 +352,9 @@ Based on scanning 10 major healthcare providers:
 ### Start Simple
 ```yaml
 # Basic CI that works
-- run: poetry run pytest
-- run: poetry run ruff check
-- run: poetry run mypy
+- run: uv run pytest
+- run: uv run ruff check
+- run: uv run mypy
 
 # Add features incrementally after testing locally
 ```
@@ -362,7 +362,7 @@ Based on scanning 10 major healthcare providers:
 ### Common CI Mistakes to Avoid
 1. Don't add complex features without testing locally first
 2. Never use "continue-on-error" to hide failures
-3. Check package manager compatibility (Poetry vs pip)
+3. Ensure dependencies are properly locked (uv.lock)
 4. Verify imports work in isolated environment
 5. Tests shouldn't depend on external services
 

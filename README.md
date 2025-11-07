@@ -31,8 +31,13 @@ docker build -f Dockerfile.production -t pixel-scanner:fargate .
 # Install (one-time setup)
 git clone https://github.com/minghsuy/pixel-detector-v2.git
 cd pixel-detector-v2
-poetry install
-poetry run playwright install chromium
+
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+uv sync
+uv run playwright install chromium
 ```
 
 ### Quick Scan Examples:
@@ -214,7 +219,7 @@ docker run --rm -v $(pwd):/work pixel-scanner batch /work/domains.csv -o /work/r
 
 ### Prerequisites
 - Python 3.11 or higher
-- Poetry package manager
+- uv package manager
 - 1GB free disk space (for Chromium)
 
 ### Detailed Setup
@@ -224,15 +229,18 @@ docker run --rm -v $(pwd):/work pixel-scanner batch /work/domains.csv -o /work/r
 git clone https://github.com/minghsuy/pixel-detector-v2.git
 cd pixel-detector-v2
 
-# 2. Install dependencies
-poetry install
+# 2. Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 3. Install browser
-poetry run playwright install chromium
+# 3. Install dependencies
+uv sync
 
-# 4. Verify installation
-pixel-detector --version
-pixel-detector list-detectors
+# 4. Install browser
+uv run playwright install chromium
+
+# 5. Verify installation
+uv run pixel-detector --version
+uv run pixel-detector list-detectors
 ```
 
 ### Troubleshooting
@@ -240,13 +248,13 @@ pixel-detector list-detectors
 **Issue**: Playwright installation fails
 ```bash
 # Try installing with dependencies
-poetry run playwright install --with-deps chromium
+uv run playwright install --with-deps chromium
 ```
 
 **Issue**: Permission denied errors
 ```bash
 # Run with proper permissions
-sudo poetry run playwright install chromium
+sudo uv run playwright install chromium
 ```
 
 ## 🚀 Scanner Features
