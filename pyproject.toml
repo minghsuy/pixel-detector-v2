@@ -1,48 +1,46 @@
-[tool.poetry]
+[project]
 name = "pixel-detector"
 version = "0.3.0"
 description = "Healthcare website pixel tracking detection system"
-authors = ["Ming Yang"]
+authors = [
+    {name = "Ming Yang"}
+]
 readme = "README.md"
-packages = [{include = "pixel_detector", from = "src"}]
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.41.0",
+    "playwright-stealth==1.0.6",
+    "pydantic>=2.5.0",
+    "httpx>=0.26.0",
+    "rich>=13.7.0",
+    "typer>=0.9.0",
+    "dnspython>=2.6.0",
+    "boto3>=1.34.0",
+    "tldextract>=5.1.3",
+    "setuptools>=78.1.1,<80",
+    "idna>=3.10",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-playwright = "^1.41.0"
-playwright-stealth = "^1.0.6"
-pydantic = "^2.5.0"
-httpx = "^0.26.0"
-rich = "^13.7.0"
-typer = "^0.9.0"
-dnspython = "^2.6.0"
-boto3 = "^1.34.0"
-tldextract = "^5.1.3"
-setuptools = "^78.1.1"
-awslambdaric = {version = "^2.0.0", optional = true}
-idna = "^3.10"
+[project.optional-dependencies]
+lambda = ["awslambdaric>=2.0.0"]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0",
+    "ipython>=8.20.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-pytest-asyncio = "^0.23.0"
-pytest-cov = "^4.1.0"
-black = "^24.3.0"
-ruff = "^0.3.0"
-mypy = "^1.8.0"
-ipython = "^8.20.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 pixel-detector = "pixel_detector.cli:app"
 
-[tool.poetry.extras]
-lambda = ["awslambdaric"]
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.black]
-line-length = 120
-target-version = ['py311']
+[tool.hatch.build.targets.wheel]
+packages = ["src/pixel_detector"]
 
 [tool.ruff]
 line-length = 120

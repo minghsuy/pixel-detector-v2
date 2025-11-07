@@ -1,12 +1,18 @@
 
 from .base import BasePixelDetector
+from .cookiebot import CookieBotDetector
 from .google import GoogleAdsDetector, GoogleAnalyticsDetector
 from .linkedin import LinkedInInsightDetector
 from .meta import MetaPixelDetector
+from .onetrust import OneTrustDetector
+from .osano import OsanoDetector
 from .pinterest import PinterestTagDetector
 from .snapchat import SnapchatPixelDetector
+from .termly import TermlyDetector
 from .tiktok import TikTokPixelDetector
+from .trustarc import TrustArcDetector
 from .twitter import TwitterPixelDetector
+from .usercentrics import UsercentricsDetector
 
 # Global registry of pixel detectors
 DETECTOR_REGISTRY: dict[str, type[BasePixelDetector]] = {}
@@ -24,6 +30,7 @@ def get_all_detectors() -> list[BasePixelDetector]:
 
 def register_all_detectors() -> None:
     """Register all built-in detectors"""
+    # Tracking pixels
     register_detector("meta_pixel", MetaPixelDetector)
     register_detector("google_analytics", GoogleAnalyticsDetector)
     register_detector("google_ads", GoogleAdsDetector)
@@ -32,3 +39,10 @@ def register_all_detectors() -> None:
     register_detector("twitter_pixel", TwitterPixelDetector)
     register_detector("pinterest_tag", PinterestTagDetector)
     register_detector("snapchat_pixel", SnapchatPixelDetector)
+    # Consent management platforms
+    register_detector("onetrust", OneTrustDetector)
+    register_detector("cookiebot", CookieBotDetector)
+    register_detector("osano", OsanoDetector)
+    register_detector("trustarc", TrustArcDetector)
+    register_detector("usercentrics", UsercentricsDetector)
+    register_detector("termly", TermlyDetector)

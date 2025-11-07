@@ -1,4 +1,4 @@
-# Simplified Dockerfile for Pixel Detector
+# Simplified Dockerfile for Pixel Detector using uv
 # Uses the working CLI tool that correctly detects pixels
 
 FROM python:3.11-slim
@@ -46,29 +46,25 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy project files
-COPY pyproject.toml poetry.lock ./
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install Python dependencies
-RUN pip install --no-cache-dir poetry==1.8.5 && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi --no-root --only main
+# Copy project files
+COPY pyproject.toml uv.lock README.md ./
+COPY src/ ./src/
+
+# Install dependencies and the project
+RUN uv sync --frozen --no-dev
 
 # Pre-cache tldextract public suffix list
-RUN python -c "import tldextract; tldextract.extract('example.com')" && \
+RUN uv run python -c "import tldextract; tldextract.extract('example.com')" && \
     echo "Successfully cached public suffix list" || \
     echo "Warning: Could not pre-cache public suffix list, will try at runtime"
 
 # Install Playwright browsers
-RUN playwright install chromium || \
+RUN uv run playwright install chromium || \
     (echo "Warning: Playwright install failed, trying without SSL verification" && \
-     NODE_TLS_REJECT_UNAUTHORIZED=0 playwright install chromium)
-
-# Copy application code
-COPY src/ ./src/
-
-# Install the package with entry points
-RUN poetry install --no-interaction --no-ansi
+     NODE_TLS_REJECT_UNAUTHORIZED=0 uv run playwright install chromium)
 
 # Create directories for input/output
 RUN mkdir -p /app/input /app/output
@@ -76,8 +72,8 @@ RUN mkdir -p /app/input /app/output
 # Set Python path
 ENV PYTHONPATH=/app:/app/src
 
-# Use poetry run as entrypoint since we're not using virtualenv
-ENTRYPOINT ["poetry", "run", "pixel-detector"]
+# Use uv run as entrypoint
+ENTRYPOINT ["uv", "run", "pixel-detector"]
 
 # Default command shows help
 CMD ["--help"]

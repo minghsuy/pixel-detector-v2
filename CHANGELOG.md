@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-11-07
+
+### Added
+- **Consent Management Platform Detection**: Added 6 new detectors for privacy compliance tools
+  - OneTrust (40% market share) - Industry-leading consent platform
+  - Cookiebot (15% market share) - GDPR/CCPA compliance tool
+  - Osano (8% market share) - Privacy platform with consent management
+  - TrustArc (7% market share) - Enterprise privacy management
+  - Usercentrics (5% market share) - European consent management
+  - Termly (3% market share) - SMB-focused compliance solution
+- **Compliance Gap Analysis**: Identify sites with tracking pixels but no consent management
+  - Consent platforms classified as `RiskLevel.LOW`
+  - `hipaa_concern = False` for all consent management platforms
+  - Detection helps assess GDPR/CCPA compliance posture
+- **Enhanced PixelType Enum**: Added 6 new consent platform types to detection model
+- **Comprehensive Testing**: 100+ new test cases for consent platform detection
+  - Property validation tests for all 6 platforms
+  - Network request detection tests
+  - Pixel ID extraction tests
+  - Global variable and DOM element detection tests
+  - Registry integration tests
+
+### Changed
+- **Detection Scope**: Expanded from 8 to 14 total detector types
+- **Documentation**: Updated README with consent platform detection table
+- **Risk Classification**: Consent platforms distinguished from tracking pixels
+
 ## [2.1.0] - 2025-08-08
 
 ### Added

@@ -141,7 +141,7 @@ docker run --rm \
   batch /app/input/test_batch.csv -o /app/output
 
 # Option D: Using the CLI directly (without Docker)
-poetry run pixel-detector batch docker-input/test_domains.txt -o docker-results/
+uv run pixel-detector batch docker-input/test_domains.txt -o docker-results/
 ```
 
 ## VSCode Docker Integration

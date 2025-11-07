@@ -25,16 +25,16 @@ git clone https://github.com/YOUR_USERNAME/pixel-detector.git
 cd pixel-detector
 
 # 2. Install dependencies
-poetry install
+uv sync
 
 # 3. Install Playwright browsers
-poetry run playwright install chromium
+uv run playwright install chromium
 
 # 4. Install development dependencies
-poetry install --with dev
+uv sync --with dev
 
 # 5. Run tests to ensure everything works
-poetry run pytest
+uv run pytest
 ```
 
 ## 📝 How to Contribute
@@ -67,13 +67,13 @@ git checkout -b fix/issue-number-description
 Run these before committing:
 ```bash
 # Format code
-poetry run black src/ tests/
+uv run black src/ tests/
 
 # Check linting
-poetry run ruff check src/
+uv run ruff check src/
 
 # Check types
-poetry run mypy src/
+uv run mypy src/
 ```
 
 #### Type Annotations
@@ -132,19 +132,19 @@ Then create a Pull Request on GitHub with:
 
 ### Run All Tests
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 ### Run Specific Tests
 ```bash
 # Run a specific test file
-poetry run pytest tests/test_scanner.py
+uv run pytest tests/test_scanner.py
 
 # Run with coverage
-poetry run pytest --cov=src/pixel_detector --cov-report=html
+uv run pytest --cov=src/pixel_detector --cov-report=html
 
 # Run with verbose output
-poetry run pytest -v -s
+uv run pytest -v -s
 ```
 
 ### Writing Tests

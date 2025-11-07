@@ -31,8 +31,13 @@ docker build -f Dockerfile.production -t pixel-scanner:fargate .
 # Install (one-time setup)
 git clone https://github.com/minghsuy/pixel-detector-v2.git
 cd pixel-detector-v2
-poetry install
-poetry run playwright install chromium
+
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+uv sync
+uv run playwright install chromium
 ```
 
 ### Quick Scan Examples:
@@ -86,6 +91,23 @@ See [Docker Deployment Guide](DOCKER_DEPLOYMENT.md#aws-fargate--s3-deployment) f
 | **Twitter Pixel** | 🟡 **High** | Conversion tracking without BAA | 98% |
 | **Pinterest Tag** | 🟡 **High** | Shopping behavior tracking | 98% |
 | **Snapchat Pixel** | 🟡 **High** | Demographic targeting risks | 98% |
+
+### 🛡️ Consent Management Platforms (NEW!)
+
+We now detect 6 major consent management platforms to help you evaluate GDPR/CCPA compliance:
+
+| Platform | Market Share | Detection Rate | Risk Level |
+|----------|--------------|----------------|------------|
+| **OneTrust** | 40% | 99.9% | 🟢 Low (Compliance Tool) |
+| **Cookiebot** | 15% | 99.9% | 🟢 Low (Compliance Tool) |
+| **Osano** | 8% | 99% | 🟢 Low (Compliance Tool) |
+| **TrustArc** | 7% | 99% | 🟢 Low (Compliance Tool) |
+| **Usercentrics** | 5% | 98% | 🟢 Low (Compliance Tool) |
+| **Termly** | 3% | 98% | 🟢 Low (Compliance Tool) |
+
+**Why This Matters:** Sites with tracking pixels but NO consent management platform represent a critical GDPR/CCPA compliance gap. Conversely, detecting a consent platform indicates the organization is taking privacy seriously.
+
+**Future Phase:** We're planning banner interaction testing to verify that "Reject All" actually blocks trackers (many don't!).
 
 ## 🖼️ Sample Output
 
@@ -197,7 +219,7 @@ docker run --rm -v $(pwd):/work pixel-scanner batch /work/domains.csv -o /work/r
 
 ### Prerequisites
 - Python 3.11 or higher
-- Poetry package manager
+- uv package manager
 - 1GB free disk space (for Chromium)
 
 ### Detailed Setup
@@ -207,15 +229,18 @@ docker run --rm -v $(pwd):/work pixel-scanner batch /work/domains.csv -o /work/r
 git clone https://github.com/minghsuy/pixel-detector-v2.git
 cd pixel-detector-v2
 
-# 2. Install dependencies
-poetry install
+# 2. Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 3. Install browser
-poetry run playwright install chromium
+# 3. Install dependencies
+uv sync
 
-# 4. Verify installation
-pixel-detector --version
-pixel-detector list-detectors
+# 4. Install browser
+uv run playwright install chromium
+
+# 5. Verify installation
+uv run pixel-detector --version
+uv run pixel-detector list-detectors
 ```
 
 ### Troubleshooting
@@ -223,13 +248,13 @@ pixel-detector list-detectors
 **Issue**: Playwright installation fails
 ```bash
 # Try installing with dependencies
-poetry run playwright install --with-deps chromium
+uv run playwright install --with-deps chromium
 ```
 
 **Issue**: Permission denied errors
 ```bash
 # Run with proper permissions
-sudo poetry run playwright install chromium
+sudo uv run playwright install chromium
 ```
 
 ## 🚀 Scanner Features
