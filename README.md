@@ -87,6 +87,23 @@ See [Docker Deployment Guide](DOCKER_DEPLOYMENT.md#aws-fargate--s3-deployment) f
 | **Pinterest Tag** | 🟡 **High** | Shopping behavior tracking | 98% |
 | **Snapchat Pixel** | 🟡 **High** | Demographic targeting risks | 98% |
 
+### 🛡️ Consent Management Platforms (NEW!)
+
+We now detect 6 major consent management platforms to help you evaluate GDPR/CCPA compliance:
+
+| Platform | Market Share | Detection Rate | Risk Level |
+|----------|--------------|----------------|------------|
+| **OneTrust** | 40% | 99.9% | 🟢 Low (Compliance Tool) |
+| **Cookiebot** | 15% | 99.9% | 🟢 Low (Compliance Tool) |
+| **Osano** | 8% | 99% | 🟢 Low (Compliance Tool) |
+| **TrustArc** | 7% | 99% | 🟢 Low (Compliance Tool) |
+| **Usercentrics** | 5% | 98% | 🟢 Low (Compliance Tool) |
+| **Termly** | 3% | 98% | 🟢 Low (Compliance Tool) |
+
+**Why This Matters:** Sites with tracking pixels but NO consent management platform represent a critical GDPR/CCPA compliance gap. Conversely, detecting a consent platform indicates the organization is taking privacy seriously.
+
+**Future Phase:** We're planning banner interaction testing to verify that "Reject All" actually blocks trackers (many don't!).
+
 ## 🖼️ Sample Output
 
 ```json

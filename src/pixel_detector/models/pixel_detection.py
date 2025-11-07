@@ -13,6 +13,13 @@ class PixelType(str, Enum):
     TWITTER_PIXEL = "twitter_pixel"
     PINTEREST_TAG = "pinterest_tag"
     SNAPCHAT_PIXEL = "snapchat_pixel"
+    # Consent Management Platforms
+    ONETRUST = "onetrust"
+    COOKIEBOT = "cookiebot"
+    OSANO = "osano"
+    TRUSTARC = "trustarc"
+    USERCENTRICS = "usercentrics"
+    TERMLY = "termly"
     UNKNOWN = "unknown"
 
 
