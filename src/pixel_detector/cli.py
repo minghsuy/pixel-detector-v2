@@ -1,7 +1,6 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -33,7 +32,7 @@ def version_callback(value: bool) -> None:
 @app.command()
 def scan(
     domain: str = typer.Argument(..., help="Domain to scan (e.g., example.com)"),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None, "--output", "-o", help="Output file path for JSON results"
     ),
     screenshot: bool = typer.Option(
