@@ -1,7 +1,11 @@
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+if TYPE_CHECKING:
+    from .consent_test import ConsentComplianceSummary, ConsentTestResult
 
 
 class PixelType(str, Enum):
@@ -60,7 +64,7 @@ class ScanMetadata(BaseModel):
 
 class ScanResult(BaseModel):
     model_config = ConfigDict()
-    
+
     domain: str
     url_scanned: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -69,7 +73,15 @@ class ScanResult(BaseModel):
     screenshot_path: str | None = None
     success: bool = True
     error_message: str | None = None
-    
+
+    # Consent testing results (Phase 2)
+    consent_test_results: list["ConsentTestResult"] | None = Field(
+        default=None, description="Results from consent banner interaction tests"
+    )
+    consent_compliance_summary: Optional["ConsentComplianceSummary"] = Field(
+        default=None, description="Overall consent compliance summary"
+    )
+
     @field_serializer("timestamp")
     def serialize_timestamp(self, timestamp: datetime) -> str:
         return timestamp.isoformat() + "Z"

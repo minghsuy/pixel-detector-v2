@@ -26,6 +26,7 @@ class PixelScanner:
         max_retries: int = 3,
         max_concurrent_scans: int = 5,
         pre_check_health: bool = True,
+        test_consent: bool = False,
     ) -> None:
         self.headless = headless
         self.stealth_mode = stealth_mode
@@ -43,7 +44,8 @@ class PixelScanner:
         self.pre_check_health = pre_check_health
         self.health_checker = WebsiteHealthChecker() if pre_check_health else None
         self.url_normalizer = URLNormalizer(timeout=10)
-        
+        self.test_consent = test_consent
+
         # Register all detectors
         register_all_detectors()
 
@@ -250,6 +252,82 @@ class PixelScanner:
                     stealth_mode=self.stealth_mode,
                 )
                 
+                # Run consent tests if enabled
+                consent_test_results = None
+                consent_compliance_summary = None
+
+                if self.test_consent:
+                    self.logger.info("Running consent banner interaction tests...")
+                    try:
+                        from .consent_testing import BannerInteractionTester, ComplianceChecker
+
+                        # Close current page and run tests on fresh pages
+                        await page.close()
+
+                        # Run 3 separate tests
+                        test_results = []
+
+                        # Baseline test (no interaction)
+                        self.logger.info("Running baseline test (no interaction)...")
+                        page_baseline = await context.new_page()
+                        if self.stealth_mode:
+                            await stealth_async(page_baseline)
+
+                        page_baseline.on("request", handle_request)
+                        await page_baseline.goto(domain, wait_until="networkidle", timeout=self.timeout)
+
+                        tester_baseline = BannerInteractionTester(page_baseline, detectors)
+                        baseline_result = await tester_baseline.baseline_test()
+                        test_results.append(baseline_result)
+                        await page_baseline.close()
+
+                        # Reset detectors for next test
+                        detectors = get_all_detectors()
+
+                        # Reject All test
+                        self.logger.info("Running reject all test...")
+                        page_reject = await context.new_page()
+                        if self.stealth_mode:
+                            await stealth_async(page_reject)
+
+                        page_reject.on("request", handle_request)
+                        await page_reject.goto(domain, wait_until="networkidle", timeout=self.timeout)
+
+                        tester_reject = BannerInteractionTester(page_reject, detectors)
+                        reject_result = await tester_reject.reject_all_test()
+                        test_results.append(reject_result)
+                        await page_reject.close()
+
+                        # Reset detectors for next test
+                        detectors = get_all_detectors()
+
+                        # Accept All test
+                        self.logger.info("Running accept all test...")
+                        page_accept = await context.new_page()
+                        if self.stealth_mode:
+                            await stealth_async(page_accept)
+
+                        page_accept.on("request", handle_request)
+                        await page_accept.goto(domain, wait_until="networkidle", timeout=self.timeout)
+
+                        tester_accept = BannerInteractionTester(page_accept, detectors)
+                        accept_result = await tester_accept.accept_all_test()
+                        test_results.append(accept_result)
+                        await page_accept.close()
+
+                        # Build summary
+                        checker = ComplianceChecker()
+                        consent_compliance_summary = checker.build_summary(test_results)
+                        consent_test_results = test_results
+
+                        self.logger.info(
+                            f"Consent testing complete - Score: {consent_compliance_summary.overall_score}/100"
+                        )
+
+                    except Exception as e:
+                        self.logger.error(f"Consent testing failed: {e}")
+                        # Continue with normal scan result even if consent tests fail
+
                 result = ScanResult(
                     domain=clean_domain,
                     url_scanned=domain,
@@ -257,17 +335,19 @@ class PixelScanner:
                     scan_metadata=metadata,
                     screenshot_path=screenshot_path,
                     success=True,
+                    consent_test_results=consent_test_results,
+                    consent_compliance_summary=consent_compliance_summary,
                 )
-                
+
                 await browser.close()
-                
+
                 if not pixels_detected:
                     self.logger.info("No tracking pixels detected!")
                 else:
                     self.logger.info(
                         f"Found {len(pixels_detected)} tracking pixel(s)"
                     )
-                
+
                 return result
                 
         except Exception:

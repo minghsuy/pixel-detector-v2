@@ -1,7 +1,6 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -33,7 +32,7 @@ def version_callback(value: bool) -> None:
 @app.command()
 def scan(
     domain: str = typer.Argument(..., help="Domain to scan (e.g., example.com)"),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None, "--output", "-o", help="Output file path for JSON results"
     ),
     screenshot: bool = typer.Option(
@@ -54,6 +53,9 @@ def scan(
     max_retries: int = typer.Option(
         3, "--max-retries", help="Maximum number of retries for failed scans"
     ),
+    test_consent: bool = typer.Option(
+        False, "--test-consent", help="Test consent banner interactions (baseline, reject, accept)"
+    ),
 ) -> None:
     """Scan a single domain for tracking pixels"""
     scanner = PixelScanner(
@@ -62,6 +64,7 @@ def scan(
         screenshot=screenshot,
         timeout=timeout,
         max_retries=max_retries,
+        test_consent=test_consent,
     )
     
     # Run the scan
@@ -98,12 +101,56 @@ def scan(
             )
         
         console.print(table)
-        
+
+        # Print consent test results if available
+        if result.consent_compliance_summary:
+            console.print("\n[bold cyan]===  Consent Compliance Testing ===[/bold cyan]\n")
+
+            summary = result.consent_compliance_summary
+            if summary.overall_score >= 90:
+                score_color = "green"
+            elif summary.overall_score >= 70:
+                score_color = "yellow"
+            else:
+                score_color = "red"
+
+            console.print(f"[{score_color}]Overall Compliance Score: {summary.overall_score}/100[/{score_color}]")
+            console.print(f"Status: [bold]{summary.overall_status.value.upper()}[/bold]")
+
+            if summary.banner_platform:
+                console.print(f"Platform Detected: {summary.banner_platform.capitalize()}")
+
+            if result.consent_test_results:
+                for test_result in result.consent_test_results:
+                    # Choose emoji based on compliance status
+                    if test_result.compliance_status == "malfunctioning":
+                        test_emoji = "🔴"
+                    elif test_result.compliance_status == "inconclusive":
+                        test_emoji = "🟡"
+                    else:
+                        test_emoji = "✅"
+
+                    console.print(
+                        f"\n{test_emoji} [bold]{test_result.test_type.value.upper()} TEST:[/bold] "
+                        f"{test_result.compliance_status.value}"
+                    )
+                    console.print(f"   Score: {test_result.compliance_score}/100")
+
+                    if test_result.violations_detected:
+                        for violation in test_result.violations_detected:
+                            console.print(f"   ❌ {violation}")
+
+                    if test_result.recommendation:
+                        console.print(f"   💡 {test_result.recommendation}")
+
+            if summary.recommended_action:
+                console.print(f"\n[bold]Recommended Action:[/bold] {summary.recommended_action}")
+
         # Print metadata
         logger.info(f"\nScan completed in {result.scan_metadata.scan_duration:.2f}s")
         logger.info(f"Total requests: {result.scan_metadata.total_requests}")
         logger.info(f"Tracking requests: {result.scan_metadata.tracking_requests}")
-        
+
         if pretty:
             console.print("\nFull JSON output:")
             console.print_json(json.dumps(result.model_dump(), default=str))
