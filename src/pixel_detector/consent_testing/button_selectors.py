@@ -151,20 +151,15 @@ class BannerSelector:
         for platform_name, config in PLATFORM_SELECTORS.items():
             for selector in config.banner_container:
                 try:
-                    element = await self.page.wait_for_selector(
-                        selector, timeout=timeout_ms, state="visible"
-                    )
+                    element = await self.page.wait_for_selector(selector, timeout=timeout_ms, state="visible")
                     if element:
                         return platform_name
-                except Exception:
-                    # Selector not found, try next one
+                except Exception:  # noqa: S112 — fallback-selector loop; silent skip is intended, logging each miss would be 40+ noise lines per page
                     continue
 
         return None
 
-    async def find_button(
-        self, platform: str, action: str, timeout_ms: int = 2000
-    ) -> tuple[bool, str | None]:
+    async def find_button(self, platform: str, action: str, timeout_ms: int = 2000) -> tuple[bool, str | None]:
         """Find the button for the specified action on the detected platform.
 
         Args:
@@ -184,20 +179,15 @@ class BannerSelector:
         # Try each selector until one works
         for selector in selectors:
             try:
-                element = await self.page.wait_for_selector(
-                    selector, timeout=timeout_ms, state="visible"
-                )
+                element = await self.page.wait_for_selector(selector, timeout=timeout_ms, state="visible")
                 if element and await element.is_visible():
                     return True, selector
-            except Exception:
-                # Selector didn't work, try next one
+            except Exception:  # noqa: S112 — fallback-selector loop; silent skip is intended
                 continue
 
         return False, None
 
-    async def click_button_with_retry(
-        self, selector: str, max_attempts: int = 3
-    ) -> bool:
+    async def click_button_with_retry(self, selector: str, max_attempts: int = 3) -> bool:
         """Click a button with retry logic.
 
         Args:
@@ -222,8 +212,7 @@ class BannerSelector:
                     await self.page.click(selector, force=True, timeout=1000)
                     await self.page.wait_for_timeout(500)
                     return True
-                except Exception:
-                    # Force click also failed, continue to next attempt
+                except Exception:  # noqa: S112 — retry loop; next attempt handles it
                     continue
 
         return False
