@@ -64,6 +64,16 @@ fi
 
 EXPECTED_TAG="v${EXPECTED_VERSION}"
 
+require_synchronized_main() {
+  local context="$1"
+
+  git fetch --no-tags origin "+refs/heads/main:refs/remotes/origin/main"
+  if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
+    echo "error: $context commit is not synchronized with origin/main" >&2
+    exit 1
+  fi
+}
+
 if [[ "$MODE" == "--candidate" ]]; then
   if [[ -n "$(git status --porcelain)" ]]; then
     echo "error: release candidate checkout is dirty" >&2
@@ -76,11 +86,7 @@ if [[ "$MODE" == "--candidate" ]]; then
     exit 1
   fi
 
-  git fetch origin main
-  if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
-    echo "error: local main is not synchronized with origin/main" >&2
-    exit 1
-  fi
+  require_synchronized_main "release candidate"
 
   if git show-ref --verify --quiet "refs/tags/$EXPECTED_TAG"; then
     echo "error: local tag $EXPECTED_TAG already exists" >&2
@@ -103,6 +109,7 @@ elif [[ "$MODE" == "--tag" ]]; then
     echo "error: HEAD is not exactly tagged $EXPECTED_TAG" >&2
     exit 1
   fi
+  require_synchronized_main "release tag"
 fi
 
 if [[ -d "$ARTIFACT_DIR" ]] && [[ -n "$(find "$ARTIFACT_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then

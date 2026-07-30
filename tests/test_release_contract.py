@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import tomllib
@@ -33,6 +34,9 @@ def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     assert "set -euo pipefail" in preflight
     assert "uv python find 3.11" in preflight
     assert "python3 -c" not in preflight
+    assert '"+refs/heads/main:refs/remotes/origin/main"' in preflight
+    assert 'require_synchronized_main "release candidate"' in preflight
+    assert 'require_synchronized_main "release tag"' in preflight
     assert "git ls-remote" in preflight
     assert "uv build" in preflight
     assert "uv export" in preflight
@@ -70,4 +74,55 @@ def test_release_preflight_rejects_version_drift_before_build(tmp_path: Path) ->
 
     assert result.returncode == 1
     assert "pyproject.toml version is 2.3.0, expected 2.3.1" in result.stderr
+    assert not (tmp_path / "artifacts").exists()
+
+
+def test_release_preflight_rejects_tag_not_on_main_before_build(
+    tmp_path: Path,
+) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_git = fake_bin / "git"
+    fake_git.write_text(
+        """#!/usr/bin/env bash
+case "$1" in
+  describe)
+    printf 'v2.3.0\\n'
+    ;;
+  fetch)
+    exit 0
+    ;;
+  rev-parse)
+    if [[ "$2" == "HEAD" ]]; then
+      printf 'tagged-commit\\n'
+    else
+      printf 'main-commit\\n'
+    fi
+    ;;
+  *)
+    exit 99
+    ;;
+esac
+""",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+
+    # Fixed repository script path and controlled test-only PATH shim.
+    result = subprocess.run(  # noqa: S603
+        [
+            ROOT / "scripts" / "release-preflight.sh",
+            "--tag",
+            EXPECTED_VERSION,
+            tmp_path / "artifacts",
+        ],
+        cwd=ROOT,
+        env={**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"},
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 1
+    assert "release tag commit is not synchronized with origin/main" in result.stderr
     assert not (tmp_path / "artifacts").exists()
