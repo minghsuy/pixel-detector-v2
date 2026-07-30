@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.0] - 2025-11-07
+## [2.3.0] - 2026-07-30
 
 ### Added
+- **Verified GitHub release artifacts**: A fail-closed release preflight checks
+  the package, module, changelog, and tag versions; builds a wheel and source
+  distribution; installs the wheel in an isolated Python 3.11 environment; and
+  smoke-tests the import and CLI version. The tag workflow reruns the quality
+  gates and attaches those verified artifacts to the GitHub Release. This
+  project is not published on PyPI.
 - **Consent Banner Interaction Testing (Phase 2)**: Automated testing to verify consent platforms actually work
   - **Baseline Test**: Detects dark patterns where tracking fires before user consent
   - **Reject All Test**: Verifies that clicking "Reject All" actually blocks tracking (GDPR/CCPA compliance)
