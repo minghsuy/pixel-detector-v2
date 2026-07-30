@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import tomllib
 from pathlib import Path
@@ -133,3 +134,51 @@ esac
     assert result.returncode == 1
     assert "release tag commit is not synchronized with origin/main" in result.stderr
     assert not (tmp_path / "artifacts").exists()
+
+
+def test_release_preflight_rejects_tampered_build_constraints(
+    tmp_path: Path,
+) -> None:
+    project = tmp_path / "project"
+    shutil.copytree(
+        ROOT,
+        project,
+        ignore=shutil.ignore_patterns(
+            ".git",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".venv",
+            "dist",
+        ),
+    )
+    constraints = project / "requirements" / "release-build.txt"
+    original = constraints.read_text(encoding="utf-8")
+    tampered, replacement_count = re.subn(
+        r"sha256:[0-9a-f]{64}",
+        f"sha256:{'0' * 64}",
+        original,
+    )
+    assert replacement_count > 0
+    constraints.write_text(tampered, encoding="utf-8")
+
+    # Fixed copied script path and controlled cache/output locations.
+    result = subprocess.run(  # noqa: S603
+        [
+            project / "scripts" / "release-preflight.sh",
+            "--package",
+            EXPECTED_VERSION,
+            tmp_path / "artifacts",
+        ],
+        cwd=project,
+        env={**os.environ, "UV_CACHE_DIR": str(tmp_path / "uv-cache")},
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+    assert result.returncode != 0
+    assert "hash mismatch" in (result.stdout + result.stderr).lower()
+    assert not list((tmp_path / "artifacts").glob("*.whl"))
+    assert not list((tmp_path / "artifacts").glob("*.tar.gz"))
