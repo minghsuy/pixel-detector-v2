@@ -59,8 +59,13 @@ def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     action_uses = re.findall(r"(?m)^\s*uses:\s+[^@\s]+@([^#\s]+)", workflow)
     assert action_uses
     assert all(re.fullmatch(r"[0-9a-f]{40}", ref) for ref in action_uses)
+    assert 'version: "0.9.28"' in workflow
     assert "uv sync --all-extras --python 3.11 --locked" in workflow
     assert "release-preflight.sh" in workflow
+    assert '"+refs/tags/${GITHUB_REF_NAME}:refs/release-tags/current"' in workflow
+    assert "git rev-list -n 1 refs/release-tags/current" in workflow
+    assert 'current_commit" != "$EXPECTED_COMMIT' in workflow
+    assert "EXPECTED_COMMIT: ${{ github.sha }}" in workflow
     assert "gh release create" in workflow
     assert "pypi" not in workflow.lower()
 
