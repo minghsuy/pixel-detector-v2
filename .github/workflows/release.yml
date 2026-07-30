@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python 3.11
+        run: uv python install 3.11
+
+      - name: Install locked dependencies
+        run: uv sync --all-extras --python 3.11 --locked
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install chromium
+
+      - name: Run tests with coverage
+        run: uv run pytest tests/ --cov=src --cov-report=term-missing
+
+      - name: Run linter
+        run: uv run ruff check src/
+
+      - name: Run type checker
+        run: uv run mypy src/
+
+      - name: Build and verify release artifacts
+        run: scripts/release-preflight.sh --tag "${GITHUB_REF_NAME#v}" dist
+
+      - name: Upload verified artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pixel-detector-${{ github.ref_name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: pixel-detector-${{ github.ref_name }}
+          path: dist/
+
+      - name: Create GitHub Release
+        run: >-
+          gh release create "$GITHUB_REF_NAME" dist/*
+          --repo "$GITHUB_REPOSITORY"
+          --verify-tag
+          --title "$GITHUB_REF_NAME"
+          --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

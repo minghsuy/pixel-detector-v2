@@ -161,6 +161,7 @@ scan_results.json
 results/
 *.txt
 !requirements*.txt
+!requirements/*.txt
 !santa_clara_healthcare.txt  # Keep as example input
 # Keep example results for documentation
 !example_results/**/*.json

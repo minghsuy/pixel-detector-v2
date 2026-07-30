@@ -257,6 +257,23 @@ docker run --rm -v $(pwd):/work pixel-scanner batch /work/domains.csv -o /work/r
 - uv package manager
 - 1GB free disk space (for Chromium)
 
+### GitHub Release Artifacts
+
+Pixel Detector is distributed from this repository and its
+[GitHub Releases](https://github.com/minghsuy/pixel-detector-v2/releases).
+It is **not currently published on PyPI**; `pip install pixel-detector` is not
+a supported installation path.
+
+Starting with `v2.3.0`, each GitHub Release includes a reviewed wheel and
+source distribution. To install a downloaded wheel:
+
+```bash
+uv venv
+uv pip install ./pixel_detector-2.3.0-py3-none-any.whl
+uv run playwright install chromium
+uv run pixel-detector --version
+```
+
 ### Detailed Setup
 
 ```bash
