@@ -31,6 +31,8 @@ def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     )
 
     assert "set -euo pipefail" in preflight
+    assert "uv python find 3.11" in preflight
+    assert "python3 -c" not in preflight
     assert "git ls-remote" in preflight
     assert "uv build" in preflight
     assert "uv export" in preflight
@@ -43,6 +45,9 @@ def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     assert '"v*"' in workflow
     assert re.search(r"(?m)^permissions:\s*\{\}\s*$", workflow)
     assert "contents: write" in workflow
+    action_uses = re.findall(r"(?m)^\s*uses:\s+[^@\s]+@([^#\s]+)", workflow)
+    assert action_uses
+    assert all(re.fullmatch(r"[0-9a-f]{40}", ref) for ref in action_uses)
     assert "release-preflight.sh" in workflow
     assert "gh release create" in workflow
     assert "pypi" not in workflow.lower()

@@ -39,8 +39,9 @@ fi
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
 
+PYTHON_311="$(uv python find 3.11)"
 PROJECT_VERSION="$(
-  python3 -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])'
+  "$PYTHON_311" -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])'
 )"
 MODULE_VERSION="$(
   sed -nE 's/^__version__ = "([^"]+)"$/\1/p' src/pixel_detector/__init__.py
