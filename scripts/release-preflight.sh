@@ -119,7 +119,10 @@ fi
 mkdir -p "$ARTIFACT_DIR"
 ARTIFACT_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
 
-uv build --out-dir "$ARTIFACT_DIR"
+uv build \
+  --build-constraints requirements/release-build.txt \
+  --require-hashes \
+  --out-dir "$ARTIFACT_DIR"
 
 shopt -s nullglob
 wheels=("$ARTIFACT_DIR"/pixel_detector-"$EXPECTED_VERSION"-*.whl)

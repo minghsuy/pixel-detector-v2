@@ -27,6 +27,9 @@ def test_release_version_is_single_consistent_contract() -> None:
 
 def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     preflight = (ROOT / "scripts" / "release-preflight.sh").read_text(encoding="utf-8")
+    build_constraints = (
+        ROOT / "requirements" / "release-build.txt"
+    ).read_text(encoding="utf-8")
     workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"
     )
@@ -39,11 +42,14 @@ def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     assert 'require_synchronized_main "release tag"' in preflight
     assert "git ls-remote" in preflight
     assert "uv build" in preflight
+    assert "--build-constraints requirements/release-build.txt" in preflight
     assert "uv export" in preflight
     assert "--locked" in preflight
     assert "--require-hashes" in preflight
     assert "uv pip install" in preflight
     assert re.search(r"pixel-detector.*--version", preflight)
+    assert "hatchling==1.31.0" in build_constraints
+    assert "--hash=sha256:" in build_constraints
 
     assert re.search(r"(?m)^\s+tags:\s*$", workflow)
     assert '"v*"' in workflow
@@ -52,6 +58,7 @@ def test_release_preflight_and_workflow_are_present_and_fail_closed() -> None:
     action_uses = re.findall(r"(?m)^\s*uses:\s+[^@\s]+@([^#\s]+)", workflow)
     assert action_uses
     assert all(re.fullmatch(r"[0-9a-f]{40}", ref) for ref in action_uses)
+    assert "uv sync --all-extras --python 3.11 --locked" in workflow
     assert "release-preflight.sh" in workflow
     assert "gh release create" in workflow
     assert "pypi" not in workflow.lower()
