@@ -48,7 +48,22 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "S", "B", "A", "C4", "PT", "Q"]
+extend-select = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 ignore = ["S101", "B008", "UP007"]  # S101: assert in tests, B008: typer defaults, UP007: Optional[T] for typer compat
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pylint]
+max-args = 10
+max-branches = 15
+max-statements = 75
+
+[tool.ruff.lint.per-file-ignores]
+# 2026-09-02 baseline: remove or narrow each waiver when the file is substantively changed.
+"src/pixel_detector/cli.py" = ["C901", "PLR0912", "PLR0915"]
+"src/pixel_detector/consent_testing/compliance_checker.py" = ["C901", "PLR0912"]
+"src/pixel_detector/scanner.py" = ["C901", "PLR0915"]
 
 [tool.mypy]
 python_version = "3.11"
