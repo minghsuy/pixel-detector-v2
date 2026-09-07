@@ -36,7 +36,12 @@ def mock_response() -> Mock:
 @pytest.fixture
 def mock_page() -> AsyncMock:
     """Create a mock Playwright Page object."""
-    page = create_autospec(Page, spec_set=True)
+    # spec_set=False: playwright-stealth 2.x sets a private marker attribute
+    # (_playwright_stealth_applied) on the page to guard against double
+    # application. Real Page objects allow arbitrary attribute assignment;
+    # spec_set=True would reject it and this fixture shouldn't be stricter
+    # than the object it's standing in for.
+    page = create_autospec(Page, spec_set=False)
     page.url = "https://example.com"
     page.goto = AsyncMock(return_value=None)
     page.wait_for_load_state = AsyncMock(return_value=None)

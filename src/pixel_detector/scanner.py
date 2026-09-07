@@ -5,7 +5,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from playwright.async_api import Browser, BrowserContext, Request, async_playwright
-from playwright_stealth import stealth_async  # type: ignore
+from playwright_stealth import Stealth  # type: ignore
 
 from .detectors import get_all_detectors, register_all_detectors
 from .logging_config import get_logger
@@ -30,6 +30,7 @@ class PixelScanner:
     ) -> None:
         self.headless = headless
         self.stealth_mode = stealth_mode
+        self._stealth = Stealth()
         self.screenshot = screenshot
         self.timeout = timeout
         self.user_agent = user_agent or (
@@ -201,7 +202,7 @@ class PixelScanner:
                 
                 # Apply stealth mode
                 if self.stealth_mode:
-                    await stealth_async(page)
+                    await self._stealth.apply_stealth_async(page)
                 
                 # Navigate to the page
                 self.logger.info(f"Scanning {domain}...")
@@ -271,7 +272,7 @@ class PixelScanner:
                         self.logger.info("Running baseline test (no interaction)...")
                         page_baseline = await context.new_page()
                         if self.stealth_mode:
-                            await stealth_async(page_baseline)
+                            await self._stealth.apply_stealth_async(page_baseline)
 
                         page_baseline.on("request", handle_request)
                         await page_baseline.goto(domain, wait_until="networkidle", timeout=self.timeout)
@@ -288,7 +289,7 @@ class PixelScanner:
                         self.logger.info("Running reject all test...")
                         page_reject = await context.new_page()
                         if self.stealth_mode:
-                            await stealth_async(page_reject)
+                            await self._stealth.apply_stealth_async(page_reject)
 
                         page_reject.on("request", handle_request)
                         await page_reject.goto(domain, wait_until="networkidle", timeout=self.timeout)
@@ -305,7 +306,7 @@ class PixelScanner:
                         self.logger.info("Running accept all test...")
                         page_accept = await context.new_page()
                         if self.stealth_mode:
-                            await stealth_async(page_accept)
+                            await self._stealth.apply_stealth_async(page_accept)
 
                         page_accept.on("request", handle_request)
                         await page_accept.goto(domain, wait_until="networkidle", timeout=self.timeout)
