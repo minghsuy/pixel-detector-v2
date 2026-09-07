@@ -275,7 +275,15 @@ class PixelScanner:
                             await self._stealth.apply_stealth_async(page_baseline)
 
                         page_baseline.on("request", handle_request)
-                        await page_baseline.goto(domain, wait_until="networkidle", timeout=self.timeout)
+                        # "load" not "networkidle": a --test-consent scan against a site with
+                        # heavy background traffic (e.g. facebook.com) was observed hanging well
+                        # past self.timeout with this on "networkidle" -- the exact mechanism
+                        # wasn't pinned down (isolated repros of this same goto sequence didn't
+                        # reproduce it), but switching to "load" made the same scan complete
+                        # reliably. request-based pixel capture is unaffected (the listener above
+                        # is already attached before goto), and the banner testers below add
+                        # their own settle delay after this returns.
+                        await page_baseline.goto(domain, wait_until="load", timeout=self.timeout)
 
                         tester_baseline = BannerInteractionTester(page_baseline, detectors)
                         baseline_result = await tester_baseline.baseline_test()
@@ -292,7 +300,8 @@ class PixelScanner:
                             await self._stealth.apply_stealth_async(page_reject)
 
                         page_reject.on("request", handle_request)
-                        await page_reject.goto(domain, wait_until="networkidle", timeout=self.timeout)
+                        # "load" not "networkidle" -- see comment on the baseline test's goto above
+                        await page_reject.goto(domain, wait_until="load", timeout=self.timeout)
 
                         tester_reject = BannerInteractionTester(page_reject, detectors)
                         reject_result = await tester_reject.reject_all_test()
@@ -309,7 +318,8 @@ class PixelScanner:
                             await self._stealth.apply_stealth_async(page_accept)
 
                         page_accept.on("request", handle_request)
-                        await page_accept.goto(domain, wait_until="networkidle", timeout=self.timeout)
+                        # "load" not "networkidle" -- see comment on the baseline test's goto above
+                        await page_accept.goto(domain, wait_until="load", timeout=self.timeout)
 
                         tester_accept = BannerInteractionTester(page_accept, detectors)
                         accept_result = await tester_accept.accept_all_test()
