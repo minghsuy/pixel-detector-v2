@@ -1,0 +1,92 @@
+name: Claude Code Review
+
+# Bridge workflow: posts `@claude review` as a PR comment using a PAT, which
+# triggers claude.yml to run the actual review.
+#
+# Why a bridge: invoking claude-code-action@v1 directly from a `pull_request`
+# event hits an upstream bug (anthropics/claude-code-action#1266) and posts no
+# review — the job goes green but nothing lands on the PR. The same action
+# invoked from `issue_comment` (claude.yml) works reliably. So we route the
+# automated PR-event path through a PR comment that triggers claude.yml.
+#
+# Why a PAT (not GITHUB_TOKEN): GitHub suppresses downstream workflow triggers
+# from events authored by GITHUB_TOKEN (the recursion guard). A PAT-authored
+# issue_comment IS a real user event and DOES trigger claude.yml. BRIDGE_PAT is
+# a dedicated fine-grained PAT scoped only to pixel-detector-v2 with Pull
+# requests Read+Write; do not expose a broad all-repositories token to this
+# PR-triggered job.
+#
+# When upstream #1266 is fixed, this can revert to a direct claude-code-action
+# invocation and the PAT becomes dead weight.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+# Cancel an older bridge run for this PR if a new push lands before it finishes
+# — prevents duplicate `@claude review` posts on rapid pushes.
+concurrency:
+  group: claude-review-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  trigger-review:
+    # Skip drafts and bot-authored PRs (Renovate) -- those don't need AI review.
+    # Skip fork PRs too: this is a public repo, and GitHub withholds repo
+    # secrets from `pull_request` events whose head is a fork, so BRIDGE_PAT
+    # would read empty for every external contributor. Without this guard,
+    # the fail-loud check below fires on every fork PR with a misleading
+    # message ("secret is not set") when the real cause is "not exposed to
+    # forks" -- a normal, expected condition, not a misconfiguration.
+    if: |
+      !github.event.pull_request.draft &&
+      github.event.pull_request.user.type != 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    # GitHub-hosted only -- this is a public repo. A self-hosted runner here
+    # would let a fork PR (or, before the guard above, any PR) execute
+    # attacker-controlled code on infrastructure outside GitHub's sandbox.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # gh uses BRIDGE_PAT (not GITHUB_TOKEN), so the job token needs nothing.
+    permissions: {}
+
+    steps:
+      - name: Post @claude review comment
+        env:
+          GH_TOKEN: ${{ secrets.BRIDGE_PAT }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          # Marker so the cleanup filter only matches bridge-posted comments;
+          # a human typing `@claude review` won't have it and stays untouched.
+          MARKER: '<!-- managed by claude-code-review.yml bridge; do not edit -->'
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+              echo "::error::BRIDGE_PAT secret is not set on this repo."
+              echo "::error::Add a fine-grained PAT scoped only to pixel-detector-v2 with"
+              echo "::error::Pull requests Read+Write as secret BRIDGE_PAT. Background:"
+              echo "::error::anthropics/claude-code-action#1266 — the bridge routes auto-review"
+              echo "::error::through @claude; PAT-authored events trigger downstream workflows,"
+              echo "::error::GITHUB_TOKEN ones don't."
+              exit 1
+          fi
+
+          # The verdict line is the gate signal (keep the exact tokens
+          # REVIEW-VERDICT: PASS / REVIEW-VERDICT: FAIL). The REVIEW-NITS
+          # sentinel wraps non-blocking observations so they survive gated
+          # auto-merge as a follow-up issue rather than being swallowed on
+          # PASS. Backticks are escaped (\`) -- this is a bash double-quoted
+          # string.
+          BRIDGE_BODY="@claude review this PR. End your review with exactly one line containing the verdict: REVIEW-VERDICT: PASS if there are no blocking issues, or REVIEW-VERDICT: FAIL if there are blocking issues. If you have non-blocking observations (nits), wrap ONLY those observations between a line \`<!-- REVIEW-NITS:START -->\` and a line \`<!-- REVIEW-NITS:END -->\` (omit the block entirely when there are none) so they survive gated auto-merge as a follow-up issue. ${MARKER}"
+
+          # Delete prior bridge comments (matched by the marker, not the exact
+          # body -- the instruction text changes over time; matching the stable
+          # marker also cleans older-format bridge comments). Human @claude
+          # comments without the marker are untouched.
+          # `|| true` keeps a transient DELETE failure from aborting the post.
+          gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+              | jq -r --arg marker "$MARKER" '.[] | select(.body | contains($marker)) | .id' \
+              | xargs -r -I{} gh api -X DELETE "repos/${REPO}/issues/comments/{}" \
+              || true
+
+          gh pr comment "$PR" -R "$REPO" --body "$BRIDGE_BODY"
