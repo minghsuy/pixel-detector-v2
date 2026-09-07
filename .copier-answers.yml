@@ -1,0 +1,10 @@
+# Written by copier; do not edit by hand.
+# `copier update` reads this to know which template and version produced the files it owns.
+# Without this file committed, update cannot work and the repo silently stops tracking the
+# template — the same class of silent drift the template exists to end.
+_commit: v1.2.0
+_src_path: /home/miyang/dgx-infra
+dgx_infra_ref: acc82343c05806dfd0c79915ce74790cdebe2a0e
+is_python: true
+visibility: public
+want_claude_review: true
