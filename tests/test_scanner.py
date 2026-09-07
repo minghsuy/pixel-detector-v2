@@ -3,7 +3,7 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch, MagicMock
+from unittest.mock import AsyncMock, Mock, patch, MagicMock, create_autospec
 
 import pytest
 from playwright.async_api import Browser, BrowserContext, Page, Request
@@ -44,6 +44,27 @@ class TestPixelScanner:
         assert result.success is True
         assert isinstance(result.timestamp, datetime)
         assert result.error_message is None
+
+    @pytest.mark.asyncio
+    async def test_scan_domain_applies_stealth(self, mock_scanner: PixelScanner, mock_page: AsyncMock):
+        """Test that stealth is applied to the page when stealth_mode is enabled."""
+        mock_scanner.pre_check_health = False  # avoid a real network call to find_accessible_url
+        mock_scanner._stealth = AsyncMock()
+
+        await mock_scanner.scan_domain("https://example.com")
+
+        mock_scanner._stealth.apply_stealth_async.assert_awaited_once_with(mock_page)
+
+    @pytest.mark.asyncio
+    async def test_scan_domain_skips_stealth_when_disabled(self, mock_scanner: PixelScanner):
+        """Test that stealth is not applied when stealth_mode is disabled."""
+        mock_scanner.pre_check_health = False  # avoid a real network call to find_accessible_url
+        mock_scanner.stealth_mode = False
+        mock_scanner._stealth = AsyncMock()
+
+        await mock_scanner.scan_domain("https://example.com")
+
+        mock_scanner._stealth.apply_stealth_async.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_scan_domain_with_network_requests(
@@ -108,6 +129,61 @@ class TestPixelScanner:
             assert "Network error" in str(result.error_message) or "await" in str(result.error_message)
             assert result.domain == "error.com"
             assert result.pixels_detected == []
+
+    @pytest.mark.asyncio
+    async def test_scan_domain_creates_independent_page_per_scan(
+        self, mock_browser: AsyncMock, mock_browser_context: AsyncMock
+    ):
+        """Regression guard: each scan_domain call must get its own fresh page, not a
+        cached/shared one -- if it did, the real Stealth instance's init script would
+        only be injected on the first scan and silently skipped on the rest.
+
+        Note: with fully-mocked I/O nothing here actually interleaves (asyncio.gather
+        runs the three scans to completion one after another), so this doesn't exercise
+        real concurrency/race timing -- it verifies the fresh-page-per-call invariant
+        that concurrency safety depends on.
+        """
+        from playwright_stealth import Stealth
+
+        created_pages: list[AsyncMock] = []
+
+        def make_page() -> AsyncMock:
+            page = create_autospec(Page, spec_set=False)
+            page.goto = AsyncMock(return_value=None)
+            page.wait_for_load_state = AsyncMock(return_value=None)
+            page.evaluate = AsyncMock(return_value={})
+            page.content = AsyncMock(return_value="<html><body></body></html>")
+            page.query_selector_all = AsyncMock(return_value=[])
+            page.screenshot = AsyncMock(return_value=b"fake_screenshot_data")
+            page.close = AsyncMock(return_value=None)
+            page.context = AsyncMock()
+            page.context.cookies = AsyncMock(return_value=[])
+            page.add_init_script = AsyncMock(return_value=None)
+            created_pages.append(page)
+            return page
+
+        mock_browser.new_context.return_value = mock_browser_context
+        mock_browser_context.new_page = AsyncMock(side_effect=make_page)
+
+        scanner = PixelScanner(headless=True, timeout=5000, pre_check_health=False)
+        scanner._launch_browser = AsyncMock(return_value=mock_browser)  # type: ignore
+        scanner._create_context = AsyncMock(return_value=mock_browser_context)  # type: ignore
+        scanner._stealth = Stealth()
+
+        results = await asyncio.gather(
+            scanner.scan_domain("https://example.com"),
+            scanner.scan_domain("https://example.org"),
+            scanner.scan_domain("https://example.net"),
+        )
+
+        assert all(result.success for result in results)
+        assert len(created_pages) == 3
+        for page in created_pages:
+            # Stealth's init script must land on every page exactly once. A page reused
+            # or shared across scans would show 0 (guard skipped it) or 2+ calls here --
+            # asserting the effect directly instead of parsing the guard's warning text,
+            # which would silently stop catching this if the library reworded it.
+            page.add_init_script.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_scan_multiple_domains(self, mock_scanner: PixelScanner):
