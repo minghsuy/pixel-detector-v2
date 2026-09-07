@@ -1,0 +1,48 @@
+name: Claude Code
+
+# THIN CALLER — do not add logic here. The @claude gate, the concurrency group, the steps
+# and the timeout all live in dgx-infra's reusable claude-responder.yml, because this file
+# used to be a per-repo copy: ~21 copies with 13 distinct variants, and a concurrency fix
+# reached 2 of 15 of them (dgx-infra#150/#156).
+#
+# issue_comment workflows run from the DEFAULT BRANCH, so changes here take effect only
+# once merged and cannot be validated on their own PR.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+# A called workflow can only NARROW the caller's token, never widen it, so the grant lives here.
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  id-token: write
+  actions: read
+
+jobs:
+  claude:
+    uses: minghsuy/dgx-infra/.github/workflows/claude-responder.yml@acc82343c05806dfd0c79915ce74790cdebe2a0e
+    with:
+
+
+      runs-on: '"ubuntu-latest"'
+
+    secrets:
+      # Explicit, NOT `secrets: inherit`. inherit hands every secret the caller holds to the
+      # called workflow; this one needs exactly one. The exposure is theoretical while the
+      # pinned SHA touches only this secret — but pinning exists precisely because a future SHA
+      # might not, and a workflow that runs an agent is the last place to default to handing
+      # over a repo's entire secret set (dgx-infra#156 review).
+      # An Actions expression and a Jinja expression use the same delimiters, so
+      # everything from here to endraw is emitted literally. Without that, Copier evaluates
+      # `secrets` as a template variable and generation fails outright — and note a YAML `#`
+      # comment is NOT protection: the comment that used to explain this sat outside the raw
+      # block, contained the delimiters it was describing, and broke the template.
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
