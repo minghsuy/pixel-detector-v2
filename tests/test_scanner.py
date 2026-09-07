@@ -1,7 +1,6 @@
 """Tests for the pixel scanner module."""
 
 import asyncio
-import warnings
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch, MagicMock, create_autospec
@@ -49,6 +48,7 @@ class TestPixelScanner:
     @pytest.mark.asyncio
     async def test_scan_domain_applies_stealth(self, mock_scanner: PixelScanner, mock_page: AsyncMock):
         """Test that stealth is applied to the page when stealth_mode is enabled."""
+        mock_scanner.pre_check_health = False  # avoid a real network call to find_accessible_url
         mock_scanner._stealth = AsyncMock()
 
         await mock_scanner.scan_domain("https://example.com")
@@ -58,6 +58,7 @@ class TestPixelScanner:
     @pytest.mark.asyncio
     async def test_scan_domain_skips_stealth_when_disabled(self, mock_scanner: PixelScanner):
         """Test that stealth is not applied when stealth_mode is disabled."""
+        mock_scanner.pre_check_health = False  # avoid a real network call to find_accessible_url
         mock_scanner.stealth_mode = False
         mock_scanner._stealth = AsyncMock()
 
@@ -130,13 +131,21 @@ class TestPixelScanner:
             assert result.pixels_detected == []
 
     @pytest.mark.asyncio
-    async def test_concurrent_scans_apply_stealth_independently(
+    async def test_scan_domain_creates_independent_page_per_scan(
         self, mock_browser: AsyncMock, mock_browser_context: AsyncMock
     ):
-        """Test that the real Stealth instance applies cleanly to concurrently-scanned
-        domains' independent pages, without one page's marker attribute (which the
-        library's double-application guard sets) affecting another's."""
+        """Regression guard: each scan_domain call must get its own fresh page, not a
+        cached/shared one -- if it did, the real Stealth instance's init script would
+        only be injected on the first scan and silently skipped on the rest.
+
+        Note: with fully-mocked I/O nothing here actually interleaves (asyncio.gather
+        runs the three scans to completion one after another), so this doesn't exercise
+        real concurrency/race timing -- it verifies the fresh-page-per-call invariant
+        that concurrency safety depends on.
+        """
         from playwright_stealth import Stealth
+
+        created_pages: list[AsyncMock] = []
 
         def make_page() -> AsyncMock:
             page = create_autospec(Page, spec_set=False)
@@ -149,6 +158,8 @@ class TestPixelScanner:
             page.close = AsyncMock(return_value=None)
             page.context = AsyncMock()
             page.context.cookies = AsyncMock(return_value=[])
+            page.add_init_script = AsyncMock(return_value=None)
+            created_pages.append(page)
             return page
 
         mock_browser.new_context.return_value = mock_browser_context
@@ -159,19 +170,20 @@ class TestPixelScanner:
         scanner._create_context = AsyncMock(return_value=mock_browser_context)  # type: ignore
         scanner._stealth = Stealth()
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            results = await asyncio.gather(
-                scanner.scan_domain("https://example.com"),
-                scanner.scan_domain("https://example.org"),
-                scanner.scan_domain("https://example.net"),
-            )
+        results = await asyncio.gather(
+            scanner.scan_domain("https://example.com"),
+            scanner.scan_domain("https://example.org"),
+            scanner.scan_domain("https://example.net"),
+        )
 
         assert all(result.success for result in results)
-        stealth_warnings = [w for w in caught if "stealth" in str(w.message).lower()]
-        assert not stealth_warnings, (
-            "stealth flagged duplicate application -- pages are no longer independent"
-        )
+        assert len(created_pages) == 3
+        for page in created_pages:
+            # Stealth's init script must land on every page exactly once. A page reused
+            # or shared across scans would show 0 (guard skipped it) or 2+ calls here --
+            # asserting the effect directly instead of parsing the guard's warning text,
+            # which would silently stop catching this if the library reworded it.
+            page.add_init_script.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_scan_multiple_domains(self, mock_scanner: PixelScanner):
