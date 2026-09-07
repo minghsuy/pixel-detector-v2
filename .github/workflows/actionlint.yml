@@ -1,0 +1,43 @@
+name: Workflow lint
+
+# Validates .github/workflows/** against the GitHub Actions schema.
+#
+# Why this exists: a malformed workflow does NOT produce a red check. GitHub
+# cannot parse it, so it schedules ZERO jobs, names the run after the literal
+# file path instead of the workflow's `name:`, and the check is simply ABSENT
+# from the PR. Branch protection has nothing to wait on, so the observable
+# symptom of a broken workflow is a *missing* check -- which reads the same as
+# "this workflow doesn't apply here". A `yaml.safe_load` does not help: the
+# file is valid YAML and the error lives in the Actions schema above it.
+#
+# NO workflow-level `paths:` filter on purpose: a path-filtered required check
+# hangs forever as "Expected" on a PR the filter skips, since GitHub cannot
+# distinguish "skipped" from "pending". The job is seconds long.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actionlint-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Upstream's own image (rhysd = actionlint's author), digest-pinned.
+      - name: Lint workflow files
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --workdir /github/workspace \
+            -v "$PWD:/github/workspace:ro" \
+            rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667  # v1.7.12
