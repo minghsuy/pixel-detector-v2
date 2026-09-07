@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>minghsuy/dgx-infra"]
+  "extends": ["github>minghsuy/dgx-infra"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["setuptools"],
+      "allowedVersions": "<80",
+      "description": "setuptools >=81 dropped bundled pkg_resources, which playwright-stealth==1.0.6 imports at load time; pyproject.toml pins <80 for this reason. Widen once playwright-stealth drops the pkg_resources dependency."
+    }
+  ]
 }
